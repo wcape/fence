@@ -1,0 +1,372 @@
+<!-- Payment Model - Handles payment data structure and validation -->
+<script>
+class PaymentModel {
+    constructor(data = {}) {
+        this.id = data.id || null;
+        this.userId = data.userId || null;
+        this.plan = data.plan || 'free';
+        this.amount = data.amount || 0;
+        this.currency = data.currency || 'usd';
+        this.status = data.status || 'pending';
+        this.paymentMethod = data.paymentMethod || null;
+        this.paymentIntentId = data.paymentIntentId || null;
+        this.stripeCustomerId = data.stripeCustomerId || null;
+        this.stripeSubscriptionId = data.stripeSubscriptionId || null;
+        this.billingCycle = data.billingCycle || 'monthly';
+        this.billingPeriodStart = data.billingPeriodStart || null;
+        this.billingPeriodEnd = data.billingPeriodEnd || null;
+        this.nextBillingDate = data.nextBillingDate || null;
+        this.trialStart = data.trialStart || null;
+        this.trialEnd = data.trialEnd || null;
+        this.isTrialActive = data.isTrialActive || false;
+        this.cancelAtPeriodEnd = data.cancelAtPeriodEnd || false;
+        this.cancellationReason = data.cancellationReason || null;
+        this.refundAmount = data.refundAmount || 0;
+        this.refundReason = data.refundReason || null;
+        this.createdAt = data.createdAt || new Date();
+        this.updatedAt = data.updatedAt || new Date();
+        this.processedAt = data.processedAt || null;
+        this.failedAt = data.failedAt || null;
+        this.billingAddress = data.billingAddress || {};
+        this.taxAmount = data.taxAmount || 0;
+        this.discountAmount = data.discountAmount || 0;
+        this.totalAmount = data.totalAmount || 0;
+        this.invoiceUrl = data.invoiceUrl || null;
+        this.receiptUrl = data.receiptUrl || null;
+        this.metadata = data.metadata || {};
+        this.webhookEvents = data.webhookEvents || [];
+    }
+
+    // Validation methods
+    validate() {
+        const errors = [];
+
+        if (!this.userId) {
+            errors.push('User ID is required');
+        }
+
+        if (!this.plan || !this.isValidPlan(this.plan)) {
+            errors.push('Valid plan is required');
+        }
+
+        if (this.amount < 0) {
+            errors.push('Amount cannot be negative');
+        }
+
+        if (!this.currency || !this.isValidCurrency(this.currency)) {
+            errors.push('Valid currency is required');
+        }
+
+        if (!this.status || !this.isValidStatus(this.status)) {
+            errors.push('Valid status is required');
+        }
+
+        if (this.billingCycle && !this.isValidBillingCycle(this.billingCycle)) {
+            errors.push('Valid billing cycle is required');
+        }
+
+        return {
+            isValid: errors.length === 0,
+            errors: errors
+        };
+    }
+
+    isValidPlan(plan) {
+        return ['free', 'pro', 'elite'].includes(plan);
+    }
+
+    isValidCurrency(currency) {
+        return ['usd', 'eur', 'gbp', 'cad', 'aud'].includes(currency.toLowerCase());
+    }
+
+    isValidStatus(status) {
+        return ['pending', 'processing', 'succeeded', 'failed', 'canceled', 'refunded'].includes(status);
+    }
+
+    isValidBillingCycle(cycle) {
+        return ['monthly', 'yearly', 'weekly', 'daily'].includes(cycle);
+    }
+
+    // Data transformation methods
+    toJSON() {
+        return {
+            id: this.id,
+            userId: this.userId,
+            plan: this.plan,
+            amount: this.amount,
+            currency: this.currency,
+            status: this.status,
+            paymentMethod: this.paymentMethod,
+            paymentIntentId: this.paymentIntentId,
+            stripeCustomerId: this.stripeCustomerId,
+            stripeSubscriptionId: this.stripeSubscriptionId,
+            billingCycle: this.billingCycle,
+            billingPeriodStart: this.billingPeriodStart,
+            billingPeriodEnd: this.billingPeriodEnd,
+            nextBillingDate: this.nextBillingDate,
+            trialStart: this.trialStart,
+            trialEnd: this.trialEnd,
+            isTrialActive: this.isTrialActive,
+            cancelAtPeriodEnd: this.cancelAtPeriodEnd,
+            cancellationReason: this.cancellationReason,
+            refundAmount: this.refundAmount,
+            refundReason: this.refundReason,
+            createdAt: this.createdAt,
+            updatedAt: this.updatedAt,
+            processedAt: this.processedAt,
+            failedAt: this.failedAt,
+            billingAddress: this.billingAddress,
+            taxAmount: this.taxAmount,
+            discountAmount: this.discountAmount,
+            totalAmount: this.totalAmount,
+            invoiceUrl: this.invoiceUrl,
+            receiptUrl: this.receiptUrl,
+            metadata: this.metadata,
+            webhookEvents: this.webhookEvents
+        };
+    }
+
+    static fromJSON(data) {
+        return new PaymentModel(data);
+    }
+
+    // Update methods
+    updatePayment(paymentData) {
+        const allowedFields = [
+            'plan', 'amount', 'currency', 'status', 'paymentMethod',
+            'billingCycle', 'billingAddress', 'taxAmount', 'discountAmount',
+            'totalAmount', 'metadata'
+        ];
+
+        allowedFields.forEach(field => {
+            if (paymentData[field] !== undefined) {
+                this[field] = paymentData[field];
+            }
+        });
+
+        this.updatedAt = new Date();
+    }
+
+    // Status methods
+    markAsProcessing() {
+        this.status = 'processing';
+        this.updatedAt = new Date();
+    }
+
+    markAsSucceeded(processedAt = new Date()) {
+        this.status = 'succeeded';
+        this.processedAt = processedAt;
+        this.updatedAt = new Date();
+    }
+
+    markAsFailed(failedAt = new Date()) {
+        this.status = 'failed';
+        this.failedAt = failedAt;
+        this.updatedAt = new Date();
+    }
+
+    markAsCanceled(cancellationReason = null) {
+        this.status = 'canceled';
+        this.cancellationReason = cancellationReason;
+        this.updatedAt = new Date();
+    }
+
+    markAsRefunded(refundAmount, refundReason = null) {
+        this.status = 'refunded';
+        this.refundAmount = refundAmount;
+        this.refundReason = refundReason;
+        this.updatedAt = new Date();
+    }
+
+    // Subscription methods
+    activateSubscription(subscriptionData) {
+        this.stripeSubscriptionId = subscriptionData.subscriptionId;
+        this.billingPeriodStart = subscriptionData.billingPeriodStart;
+        this.billingPeriodEnd = subscriptionData.billingPeriodEnd;
+        this.nextBillingDate = subscriptionData.nextBillingDate;
+        this.updatedAt = new Date();
+    }
+
+    updateBillingPeriod(billingPeriodStart, billingPeriodEnd) {
+        this.billingPeriodStart = billingPeriodStart;
+        this.billingPeriodEnd = billingPeriodEnd;
+        this.nextBillingDate = billingPeriodEnd;
+        this.updatedAt = new Date();
+    }
+
+    scheduleCancellation(cancelAtPeriodEnd = true) {
+        this.cancelAtPeriodEnd = cancelAtPeriodEnd;
+        this.updatedAt = new Date();
+    }
+
+    // Trial methods
+    startTrial(trialDuration = 7) {
+        this.trialStart = new Date();
+        this.trialEnd = new Date(Date.now() + (trialDuration * 24 * 60 * 60 * 1000));
+        this.isTrialActive = true;
+        this.updatedAt = new Date();
+    }
+
+    endTrial() {
+        this.isTrialActive = false;
+        this.updatedAt = new Date();
+    }
+
+    isTrialExpired() {
+        if (!this.isTrialActive || !this.trialEnd) return false;
+        return new Date() > new Date(this.trialEnd);
+    }
+
+    getTrialDaysRemaining() {
+        if (!this.isTrialActive || !this.trialEnd) return 0;
+        const now = new Date();
+        const trialEnd = new Date(this.trialEnd);
+        const diffTime = trialEnd - now;
+        return Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+    }
+
+    // Billing methods
+    calculateTotalAmount() {
+        this.totalAmount = this.amount + this.taxAmount - this.discountAmount;
+        return this.totalAmount;
+    }
+
+    calculateTax(rate = 0.08) {
+        this.taxAmount = this.amount * rate;
+        this.calculateTotalAmount();
+        return this.taxAmount;
+    }
+
+    applyDiscount(discountAmount) {
+        this.discountAmount = Math.min(discountAmount, this.amount);
+        this.calculateTotalAmount();
+        return this.discountAmount;
+    }
+
+    // Plan methods
+    getPlanDetails() {
+        const plans = {
+            'free': {
+                name: 'Free Plan',
+                price: 0,
+                features: ['Basic workouts', 'Limited AI analysis', 'Community access'],
+                limits: {
+                    workoutsPerMonth: 10,
+                    aiAnalysisPerMonth: 5
+                }
+            },
+            'pro': {
+                name: 'Pro Plan',
+                price: 29,
+                features: ['Unlimited workouts', 'AI form analysis', 'Progress tracking', 'Nutrition plans'],
+                limits: {
+                    workoutsPerMonth: -1, // unlimited
+                    aiAnalysisPerMonth: -1
+                }
+            },
+            'elite': {
+                name: 'Elite Plan',
+                price: 49,
+                features: ['Everything in Pro', '1-on-1 AI coaching', 'Custom meal plans', 'Advanced analytics'],
+                limits: {
+                    workoutsPerMonth: -1,
+                    aiAnalysisPerMonth: -1
+                }
+            }
+        };
+
+        return plans[this.plan] || plans['free'];
+    }
+
+    isActiveSubscription() {
+        return this.status === 'succeeded' && !this.cancelAtPeriodEnd;
+    }
+
+    isExpired() {
+        if (!this.billingPeriodEnd) return false;
+        return new Date() > new Date(this.billingPeriodEnd);
+    }
+
+    // Payment method methods
+    updatePaymentMethod(paymentMethodData) {
+        this.paymentMethod = {
+            type: paymentMethodData.type,
+            last4: paymentMethodData.last4,
+            brand: paymentMethodData.brand,
+            expMonth: paymentMethodData.expMonth,
+            expYear: paymentMethodData.expYear,
+            updatedAt: new Date()
+        };
+        this.updatedAt = new Date();
+    }
+
+    // Webhook methods
+    addWebhookEvent(eventData) {
+        this.webhookEvents.push({
+            eventId: eventData.eventId,
+            eventType: eventData.eventType,
+            processedAt: new Date(),
+            data: eventData.data
+        });
+        this.updatedAt = new Date();
+    }
+
+    // Utility methods
+    getFormattedAmount() {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: this.currency.toUpperCase()
+        }).format(this.totalAmount / 100);
+    }
+
+    getBillingPeriodFormatted() {
+        if (!this.billingPeriodStart || !this.billingPeriodEnd) return null;
+        
+        const start = new Date(this.billingPeriodStart);
+        const end = new Date(this.billingPeriodEnd);
+        
+        return {
+            start: start.toLocaleDateString(),
+            end: end.toLocaleDateString(),
+            duration: Math.ceil((end - start) / (1000 * 60 * 60 * 24))
+        };
+    }
+
+    getNextBillingDateFormatted() {
+        if (!this.nextBillingDate) return null;
+        return new Date(this.nextBillingDate).toLocaleDateString();
+    }
+
+    // Clone method
+    clone() {
+        return new PaymentModel(this.toJSON());
+    }
+
+    // Reset method
+    reset() {
+        Object.keys(this).forEach(key => {
+            if (typeof this[key] === 'function') return;
+            this[key] = null;
+        });
+        this.createdAt = new Date();
+        this.updatedAt = new Date();
+        this.status = 'pending';
+        this.currency = 'usd';
+        this.billingCycle = 'monthly';
+        this.billingAddress = {};
+        this.metadata = {};
+        this.webhookEvents = [];
+    }
+
+    // Export method
+    exportData() {
+        return {
+            payment: this.toJSON(),
+            planDetails: this.getPlanDetails(),
+            billingPeriod: this.getBillingPeriodFormatted(),
+            nextBilling: this.getNextBillingDateFormatted()
+        };
+    }
+}
+</script>
+

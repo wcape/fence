@@ -1,0 +1,324 @@
+<!-- User Model - Handles user data structure and validation -->
+<script>
+class UserModel {
+    constructor(data = {}) {
+        this.id = data.id || null;
+        this.firstName = data.firstName || '';
+        this.lastName = data.lastName || '';
+        this.email = data.email || '';
+        this.avatar = data.avatar || null;
+        this.dateOfBirth = data.dateOfBirth || null;
+        this.gender = data.gender || null;
+        this.height = data.height || null;
+        this.weight = data.weight || null;
+        this.fitnessLevel = data.fitnessLevel || 'beginner';
+        this.goals = data.goals || [];
+        this.preferences = data.preferences || {};
+        this.subscription = data.subscription || null;
+        this.createdAt = data.createdAt || new Date();
+        this.updatedAt = data.updatedAt || new Date();
+        this.isActive = data.isActive !== undefined ? data.isActive : true;
+        this.lastLogin = data.lastLogin || null;
+        this.bodyMeasurements = data.bodyMeasurements || {};
+        this.achievements = data.achievements || [];
+        this.followers = data.followers || [];
+        this.following = data.following || [];
+        this.privacySettings = data.privacySettings || {};
+        this.notificationSettings = data.notificationSettings || {};
+    }
+
+    // Validation methods
+    validate() {
+        const errors = [];
+
+        if (!this.firstName || this.firstName.trim().length < 2) {
+            errors.push('First name must be at least 2 characters');
+        }
+
+        if (!this.lastName || this.lastName.trim().length < 2) {
+            errors.push('Last name must be at least 2 characters');
+        }
+
+        if (!this.email || !this.isValidEmail(this.email)) {
+            errors.push('Valid email address is required');
+        }
+
+        if (this.dateOfBirth && !this.isValidDate(this.dateOfBirth)) {
+            errors.push('Invalid date of birth');
+        }
+
+        if (this.height && (this.height < 100 || this.height > 250)) {
+            errors.push('Height must be between 100 and 250 cm');
+        }
+
+        if (this.weight && (this.weight < 30 || this.weight > 300)) {
+            errors.push('Weight must be between 30 and 300 kg');
+        }
+
+        if (!this.fitnessLevel || !this.isValidFitnessLevel(this.fitnessLevel)) {
+            errors.push('Valid fitness level is required');
+        }
+
+        return {
+            isValid: errors.length === 0,
+            errors: errors
+        };
+    }
+
+    isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
+
+    isValidDate(date) {
+        return date instanceof Date && !isNaN(date);
+    }
+
+    isValidFitnessLevel(level) {
+        return ['beginner', 'intermediate', 'advanced'].includes(level);
+    }
+
+    // Data transformation methods
+    toJSON() {
+        return {
+            id: this.id,
+            firstName: this.firstName,
+            lastName: this.lastName,
+            email: this.email,
+            avatar: this.avatar,
+            dateOfBirth: this.dateOfBirth,
+            gender: this.gender,
+            height: this.height,
+            weight: this.weight,
+            fitnessLevel: this.fitnessLevel,
+            goals: this.goals,
+            preferences: this.preferences,
+            subscription: this.subscription,
+            createdAt: this.createdAt,
+            updatedAt: this.updatedAt,
+            isActive: this.isActive,
+            lastLogin: this.lastLogin,
+            bodyMeasurements: this.bodyMeasurements,
+            achievements: this.achievements,
+            followers: this.followers,
+            following: this.following,
+            privacySettings: this.privacySettings,
+            notificationSettings: this.notificationSettings
+        };
+    }
+
+    static fromJSON(data) {
+        return new UserModel(data);
+    }
+
+    // Update methods
+    updateProfile(profileData) {
+        const allowedFields = [
+            'firstName', 'lastName', 'email', 'avatar', 'dateOfBirth',
+            'gender', 'height', 'weight', 'fitnessLevel', 'goals'
+        ];
+
+        allowedFields.forEach(field => {
+            if (profileData[field] !== undefined) {
+                this[field] = profileData[field];
+            }
+        });
+
+        this.updatedAt = new Date();
+    }
+
+    updatePreferences(preferences) {
+        this.preferences = { ...this.preferences, ...preferences };
+        this.updatedAt = new Date();
+    }
+
+    updateBodyMeasurements(measurements) {
+        this.bodyMeasurements = { ...this.bodyMeasurements, ...measurements };
+        this.updatedAt = new Date();
+    }
+
+    updateNotificationSettings(settings) {
+        this.notificationSettings = { ...this.notificationSettings, ...settings };
+        this.updatedAt = new Date();
+    }
+
+    updatePrivacySettings(settings) {
+        this.privacySettings = { ...this.privacySettings, ...settings };
+        this.updatedAt = new Date();
+    }
+
+    // Subscription methods
+    updateSubscription(subscription) {
+        this.subscription = subscription;
+        this.updatedAt = new Date();
+    }
+
+    hasActiveSubscription() {
+        return this.subscription && this.subscription.isActive;
+    }
+
+    getSubscriptionPlan() {
+        return this.subscription ? this.subscription.plan : 'free';
+    }
+
+    // Achievement methods
+    addAchievement(achievement) {
+        if (!this.achievements.find(a => a.id === achievement.id)) {
+            this.achievements.push(achievement);
+            this.updatedAt = new Date();
+        }
+    }
+
+    hasAchievement(achievementId) {
+        return this.achievements.some(a => a.id === achievementId);
+    }
+
+    // Social methods
+    followUser(userId) {
+        if (!this.following.includes(userId)) {
+            this.following.push(userId);
+            this.updatedAt = new Date();
+        }
+    }
+
+    unfollowUser(userId) {
+        this.following = this.following.filter(id => id !== userId);
+        this.updatedAt = new Date();
+    }
+
+    addFollower(userId) {
+        if (!this.followers.includes(userId)) {
+            this.followers.push(userId);
+            this.updatedAt = new Date();
+        }
+    }
+
+    removeFollower(userId) {
+        this.followers = this.followers.filter(id => id !== userId);
+        this.updatedAt = new Date();
+    }
+
+    // Utility methods
+    getFullName() {
+        return `${this.firstName} ${this.lastName}`.trim();
+    }
+
+    getDisplayName() {
+        return this.firstName || this.email.split('@')[0];
+    }
+
+    getAge() {
+        if (!this.dateOfBirth) return null;
+        const today = new Date();
+        const birthDate = new Date(this.dateOfBirth);
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+        
+        return age;
+    }
+
+    getBMI() {
+        if (!this.height || !this.weight) return null;
+        const heightInMeters = this.height / 100;
+        return (this.weight / (heightInMeters * heightInMeters)).toFixed(1);
+    }
+
+    getBMICategory() {
+        const bmi = this.getBMI();
+        if (!bmi) return null;
+        
+        if (bmi < 18.5) return 'Underweight';
+        if (bmi < 25) return 'Normal weight';
+        if (bmi < 30) return 'Overweight';
+        return 'Obese';
+    }
+
+    // Statistics methods
+    getWorkoutStats() {
+        // This would typically be calculated from workout history
+        return {
+            totalWorkouts: 0,
+            totalDuration: 0,
+            totalCalories: 0,
+            averageDuration: 0,
+            streak: 0,
+            lastWorkout: null
+        };
+    }
+
+    getProgressData() {
+        return {
+            weightProgress: [],
+            bodyMeasurementsProgress: [],
+            fitnessProgress: [],
+            goalProgress: []
+        };
+    }
+
+    // Privacy methods
+    isProfilePublic() {
+        return this.privacySettings.profileVisibility === 'public';
+    }
+
+    isWorkoutHistoryPublic() {
+        return this.privacySettings.workoutHistoryVisibility === 'public';
+    }
+
+    isProgressPublic() {
+        return this.privacySettings.progressVisibility === 'public';
+    }
+
+    // Notification methods
+    shouldReceiveEmailNotifications() {
+        return this.notificationSettings.emailNotifications === true;
+    }
+
+    shouldReceivePushNotifications() {
+        return this.notificationSettings.pushNotifications === true;
+    }
+
+    shouldReceiveWorkoutReminders() {
+        return this.notificationSettings.workoutReminders === true;
+    }
+
+    shouldReceiveAchievementNotifications() {
+        return this.notificationSettings.achievementNotifications === true;
+    }
+
+    // Data export methods
+    exportData() {
+        return {
+            profile: this.toJSON(),
+            workoutHistory: [], // Would be populated from workout data
+            progressData: this.getProgressData(),
+            achievements: this.achievements,
+            settings: {
+                preferences: this.preferences,
+                notifications: this.notificationSettings,
+                privacy: this.privacySettings
+            }
+        };
+    }
+
+    // Clone method
+    clone() {
+        return new UserModel(this.toJSON());
+    }
+
+    // Reset method
+    reset() {
+        Object.keys(this).forEach(key => {
+            if (typeof this[key] === 'function') return;
+            this[key] = null;
+        });
+        this.createdAt = new Date();
+        this.updatedAt = new Date();
+        this.isActive = true;
+    }
+}
+</script>
+

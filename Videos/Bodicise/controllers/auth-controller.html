@@ -1,0 +1,453 @@
+<!-- Auth Controller - Handles authentication logic -->
+<script>
+class AuthController {
+    static currentUser = null;
+    static isAuthenticated = false;
+
+    // Show login modal
+    static showLogin() {
+        const modal = document.getElementById('loginModal');
+        const formContainer = document.getElementById('loginForm');
+        
+        formContainer.innerHTML = `
+            <div class="auth-form">
+                <h2 class="auth-title">Welcome Back</h2>
+                <p class="auth-subtitle">Sign in to your Bodicise account</p>
+                
+                <form id="loginFormElement" onsubmit="AuthController.handleLogin(event)">
+                    <div class="form-group">
+                        <label for="loginEmail">Email</label>
+                        <input type="email" id="loginEmail" name="email" required 
+                               placeholder="Enter your email">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="loginPassword">Password</label>
+                        <input type="password" id="loginPassword" name="password" required 
+                               placeholder="Enter your password">
+                    </div>
+                    
+                    <div class="form-options">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="remember">
+                            <span class="checkmark"></span>
+                            Remember me
+                        </label>
+                        <a href="#" class="forgot-password">Forgot password?</a>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="fas fa-sign-in-alt"></i>
+                        Sign In
+                    </button>
+                </form>
+                
+                <div class="auth-divider">
+                    <span>or</span>
+                </div>
+                
+                <div class="social-auth">
+                    <button class="btn btn-social btn-google" onclick="AuthController.socialLogin('google')">
+                        <i class="fab fa-google"></i>
+                        Continue with Google
+                    </button>
+                    <button class="btn btn-social btn-facebook" onclick="AuthController.socialLogin('facebook')">
+                        <i class="fab fa-facebook"></i>
+                        Continue with Facebook
+                    </button>
+                </div>
+                
+                <p class="auth-switch">
+                    Don't have an account? 
+                    <a href="#" onclick="AuthController.showRegister()">Sign up</a>
+                </p>
+            </div>
+        `;
+        
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    }
+
+    // Hide login modal
+    static hideLogin() {
+        const modal = document.getElementById('loginModal');
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+
+    // Show register modal
+    static showRegister(plan = 'free') {
+        const modal = document.getElementById('registerModal');
+        const formContainer = document.getElementById('registerForm');
+        
+        formContainer.innerHTML = `
+            <div class="auth-form">
+                <h2 class="auth-title">Start Your Journey</h2>
+                <p class="auth-subtitle">Create your Bodicise account</p>
+                
+                <form id="registerFormElement" onsubmit="AuthController.handleRegister(event)">
+                    <input type="hidden" name="plan" value="${plan}">
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="firstName">First Name</label>
+                            <input type="text" id="firstName" name="firstName" required 
+                                   placeholder="First name">
+                        </div>
+                        <div class="form-group">
+                            <label for="lastName">Last Name</label>
+                            <input type="text" id="lastName" name="lastName" required 
+                                   placeholder="Last name">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="registerEmail">Email</label>
+                        <input type="email" id="registerEmail" name="email" required 
+                               placeholder="Enter your email">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="registerPassword">Password</label>
+                        <input type="password" id="registerPassword" name="password" required 
+                               placeholder="Create a password" minlength="8">
+                        <div class="password-strength" id="passwordStrength"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm Password</label>
+                        <input type="password" id="confirmPassword" name="confirmPassword" required 
+                               placeholder="Confirm your password">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="fitnessLevel">Fitness Level</label>
+                        <select id="fitnessLevel" name="fitnessLevel" required>
+                            <option value="">Select your fitness level</option>
+                            <option value="beginner">Beginner</option>
+                            <option value="intermediate">Intermediate</option>
+                            <option value="advanced">Advanced</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="goals">Primary Goal</label>
+                        <select id="goals" name="goals" required>
+                            <option value="">Select your primary goal</option>
+                            <option value="weight_loss">Weight Loss</option>
+                            <option value="muscle_gain">Muscle Gain</option>
+                            <option value="endurance">Endurance</option>
+                            <option value="strength">Strength</option>
+                            <option value="general_fitness">General Fitness</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="terms" required>
+                            <span class="checkmark"></span>
+                            I agree to the <a href="#" target="_blank">Terms of Service</a> and <a href="#" target="_blank">Privacy Policy</a>
+                        </label>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="newsletter">
+                            <span class="checkmark"></span>
+                            Subscribe to fitness tips and updates
+                        </label>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-block">
+                        <i class="fas fa-user-plus"></i>
+                        Create Account
+                    </button>
+                </form>
+                
+                <div class="auth-divider">
+                    <span>or</span>
+                </div>
+                
+                <div class="social-auth">
+                    <button class="btn btn-social btn-google" onclick="AuthController.socialLogin('google')">
+                        <i class="fab fa-google"></i>
+                        Continue with Google
+                    </button>
+                    <button class="btn btn-social btn-facebook" onclick="AuthController.socialLogin('facebook')">
+                        <i class="fab fa-facebook"></i>
+                        Continue with Facebook
+                    </button>
+                </div>
+                
+                <p class="auth-switch">
+                    Already have an account? 
+                    <a href="#" onclick="AuthController.showLogin()">Sign in</a>
+                </p>
+            </div>
+        `;
+        
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+        
+        // Add password strength checker
+        this.setupPasswordStrength();
+    }
+
+    // Hide register modal
+    static hideRegister() {
+        const modal = document.getElementById('registerModal');
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+
+    // Handle login form submission
+    static async handleLogin(event) {
+        event.preventDefault();
+        
+        const formData = new FormData(event.target);
+        const loginData = {
+            email: formData.get('email'),
+            password: formData.get('password'),
+            remember: formData.get('remember') === 'on'
+        };
+
+        try {
+            const response = await ApiClient.post('/auth/login', loginData);
+            
+            if (response.success) {
+                this.currentUser = response.user;
+                this.isAuthenticated = true;
+                
+                // Store auth token
+                localStorage.setItem('authToken', response.token);
+                localStorage.setItem('user', JSON.stringify(response.user));
+                
+                this.hideLogin();
+                this.updateUI();
+                
+                // Redirect to dashboard
+                window.location.href = 'views/dashboard.html';
+            } else {
+                this.showError(response.message);
+            }
+        } catch (error) {
+            this.showError('Login failed. Please try again.');
+            console.error('Login error:', error);
+        }
+    }
+
+    // Handle register form submission
+    static async handleRegister(event) {
+        event.preventDefault();
+        
+        const formData = new FormData(event.target);
+        const registerData = {
+            firstName: formData.get('firstName'),
+            lastName: formData.get('lastName'),
+            email: formData.get('email'),
+            password: formData.get('password'),
+            confirmPassword: formData.get('confirmPassword'),
+            fitnessLevel: formData.get('fitnessLevel'),
+            goals: formData.get('goals'),
+            plan: formData.get('plan'),
+            newsletter: formData.get('newsletter') === 'on'
+        };
+
+        // Validate passwords match
+        if (registerData.password !== registerData.confirmPassword) {
+            this.showError('Passwords do not match');
+            return;
+        }
+
+        try {
+            const response = await ApiClient.post('/auth/register', registerData);
+            
+            if (response.success) {
+                this.currentUser = response.user;
+                this.isAuthenticated = true;
+                
+                // Store auth token
+                localStorage.setItem('authToken', response.token);
+                localStorage.setItem('user', JSON.stringify(response.user));
+                
+                this.hideRegister();
+                this.updateUI();
+                
+                // Show welcome message
+                this.showSuccess('Welcome to Bodicise! Your account has been created successfully.');
+                
+                // Redirect to dashboard
+                setTimeout(() => {
+                    window.location.href = 'views/dashboard.html';
+                }, 2000);
+            } else {
+                this.showError(response.message);
+            }
+        } catch (error) {
+            this.showError('Registration failed. Please try again.');
+            console.error('Registration error:', error);
+        }
+    }
+
+    // Handle social login
+    static async socialLogin(provider) {
+        try {
+            const response = await ApiClient.post('/auth/social', { provider });
+            
+            if (response.success) {
+                // Redirect to social provider
+                window.location.href = response.authUrl;
+            } else {
+                this.showError('Social login failed. Please try again.');
+            }
+        } catch (error) {
+            this.showError('Social login failed. Please try again.');
+            console.error('Social login error:', error);
+        }
+    }
+
+    // Logout user
+    static async logout() {
+        try {
+            await ApiClient.post('/auth/logout');
+            
+            this.currentUser = null;
+            this.isAuthenticated = false;
+            
+            // Clear stored data
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('user');
+            
+            this.updateUI();
+            
+            // Redirect to home
+            window.location.href = 'index.html';
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
+    }
+
+    // Update UI based on authentication status
+    static updateUI() {
+        const navAuth = document.querySelector('.nav-auth');
+        
+        if (this.isAuthenticated && this.currentUser) {
+            navAuth.innerHTML = `
+                <div class="user-menu">
+                    <span class="user-name">${this.currentUser.firstName}</span>
+                    <div class="user-dropdown">
+                        <button class="dropdown-toggle" onclick="AuthController.toggleUserMenu()">
+                            <img src="${this.currentUser.avatar || 'assets/images/default-avatar.png'}" 
+                                 alt="Profile" class="user-avatar">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="dropdown-menu" id="userDropdown">
+                            <a href="views/profile.html" class="dropdown-item">
+                                <i class="fas fa-user"></i> Profile
+                            </a>
+                            <a href="views/dashboard.html" class="dropdown-item">
+                                <i class="fas fa-tachometer-alt"></i> Dashboard
+                            </a>
+                            <a href="views/settings.html" class="dropdown-item">
+                                <i class="fas fa-cog"></i> Settings
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a href="#" class="dropdown-item" onclick="AuthController.logout()">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            navAuth.innerHTML = `
+                <button class="btn btn-outline" onclick="AuthController.showLogin()">Login</button>
+                <button class="btn btn-primary" onclick="AuthController.showRegister()">Get Started</button>
+            `;
+        }
+    }
+
+    // Toggle user menu
+    static toggleUserMenu() {
+        const dropdown = document.getElementById('userDropdown');
+        dropdown.classList.toggle('show');
+    }
+
+    // Setup password strength checker
+    static setupPasswordStrength() {
+        const passwordInput = document.getElementById('registerPassword');
+        const strengthIndicator = document.getElementById('passwordStrength');
+        
+        passwordInput.addEventListener('input', function() {
+            const password = this.value;
+            const strength = AuthController.calculatePasswordStrength(password);
+            
+            strengthIndicator.innerHTML = `
+                <div class="strength-bar">
+                    <div class="strength-fill" style="width: ${strength.percentage}%; background-color: ${strength.color};"></div>
+                </div>
+                <span class="strength-text" style="color: ${strength.color};">${strength.text}</span>
+            `;
+        });
+    }
+
+    // Calculate password strength
+    static calculatePasswordStrength(password) {
+        let score = 0;
+        let feedback = [];
+        
+        if (password.length >= 8) score += 1;
+        else feedback.push('At least 8 characters');
+        
+        if (/[a-z]/.test(password)) score += 1;
+        else feedback.push('Lowercase letter');
+        
+        if (/[A-Z]/.test(password)) score += 1;
+        else feedback.push('Uppercase letter');
+        
+        if (/[0-9]/.test(password)) score += 1;
+        else feedback.push('Number');
+        
+        if (/[^A-Za-z0-9]/.test(password)) score += 1;
+        else feedback.push('Special character');
+        
+        const strengthLevels = [
+            { percentage: 20, color: '#ef4444', text: 'Very Weak' },
+            { percentage: 40, color: '#f97316', text: 'Weak' },
+            { percentage: 60, color: '#eab308', text: 'Fair' },
+            { percentage: 80, color: '#22c55e', text: 'Good' },
+            { percentage: 100, color: '#16a34a', text: 'Strong' }
+        ];
+        
+        return strengthLevels[Math.min(score, 4)];
+    }
+
+    // Show error message
+    static showError(message) {
+        Utils.showNotification(message, 'error');
+    }
+
+    // Show success message
+    static showSuccess(message) {
+        Utils.showNotification(message, 'success');
+    }
+
+    // Check authentication status on page load
+    static checkAuthStatus() {
+        const token = localStorage.getItem('authToken');
+        const user = localStorage.getItem('user');
+        
+        if (token && user) {
+            try {
+                this.currentUser = JSON.parse(user);
+                this.isAuthenticated = true;
+                this.updateUI();
+            } catch (error) {
+                console.error('Error parsing user data:', error);
+                this.logout();
+            }
+        }
+    }
+}
+</script>
+

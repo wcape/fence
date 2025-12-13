@@ -1,0 +1,411 @@
+<!-- Workout Controller - Handles workout-related functionality -->
+<script>
+class WorkoutController {
+    static currentWorkout = null;
+    static workoutHistory = [];
+    static aiAnalysis = null;
+
+    // Initialize workout controller
+    static async init() {
+        await this.loadWorkoutHistory();
+        await this.loadUserPreferences();
+    }
+
+    // Load workout history
+    static async loadWorkoutHistory() {
+        try {
+            const response = await ApiClient.get('/workouts/history');
+            if (response.success) {
+                this.workoutHistory = response.workouts;
+            }
+        } catch (error) {
+            console.error('Failed to load workout history:', error);
+        }
+    }
+
+    // Generate AI workout plan
+    static async generateWorkoutPlan(userData) {
+        try {
+            const response = await ApiClient.post('/workouts/generate', {
+                fitnessLevel: userData.fitnessLevel,
+                goals: userData.goals,
+                availableTime: userData.availableTime,
+                equipment: userData.equipment,
+                preferences: userData.preferences
+            });
+
+            if (response.success) {
+                return response.workoutPlan;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to generate workout plan:', error);
+            throw error;
+        }
+    }
+
+    // Start workout
+    static async startWorkout(workoutId) {
+        try {
+            const response = await ApiClient.post('/workouts/start', { workoutId });
+            
+            if (response.success) {
+                this.currentWorkout = response.workout;
+                this.startWorkoutTimer();
+                return response.workout;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to start workout:', error);
+            throw error;
+        }
+    }
+
+    // Complete exercise
+    static async completeExercise(exerciseId, data) {
+        try {
+            const response = await ApiClient.post('/workouts/complete-exercise', {
+                exerciseId,
+                sets: data.sets,
+                reps: data.reps,
+                weight: data.weight,
+                duration: data.duration,
+                formScore: data.formScore,
+                notes: data.notes
+            });
+
+            if (response.success) {
+                // Update current workout
+                if (this.currentWorkout) {
+                    const exercise = this.currentWorkout.exercises.find(ex => ex.id === exerciseId);
+                    if (exercise) {
+                        exercise.completed = true;
+                        exercise.completionData = data;
+                    }
+                }
+                return response.exercise;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to complete exercise:', error);
+            throw error;
+        }
+    }
+
+    // Finish workout
+    static async finishWorkout() {
+        try {
+            if (!this.currentWorkout) {
+                throw new Error('No active workout');
+            }
+
+            const response = await ApiClient.post('/workouts/finish', {
+                workoutId: this.currentWorkout.id,
+                totalDuration: this.getWorkoutDuration(),
+                caloriesBurned: this.calculateCaloriesBurned(),
+                exercisesCompleted: this.currentWorkout.exercises.filter(ex => ex.completed).length
+            });
+
+            if (response.success) {
+                // Add to history
+                this.workoutHistory.unshift(response.workout);
+                
+                // Clear current workout
+                this.currentWorkout = null;
+                this.stopWorkoutTimer();
+                
+                return response.workout;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to finish workout:', error);
+            throw error;
+        }
+    }
+
+    // Analyze exercise form using AI
+    static async analyzeForm(videoData) {
+        try {
+            const response = await ApiClient.post('/workouts/analyze-form', {
+                videoData: videoData,
+                exerciseType: this.currentWorkout?.currentExercise?.type
+            });
+
+            if (response.success) {
+                this.aiAnalysis = response.analysis;
+                return response.analysis;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to analyze form:', error);
+            throw error;
+        }
+    }
+
+    // Get workout recommendations
+    static async getRecommendations() {
+        try {
+            const response = await ApiClient.get('/workouts/recommendations');
+            
+            if (response.success) {
+                return response.recommendations;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to get recommendations:', error);
+            throw error;
+        }
+    }
+
+    // Save workout to favorites
+    static async saveToFavorites(workoutId) {
+        try {
+            const response = await ApiClient.post('/workouts/favorites', { workoutId });
+            
+            if (response.success) {
+                return response.favorite;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to save to favorites:', error);
+            throw error;
+        }
+    }
+
+    // Get workout statistics
+    static async getWorkoutStats(period = 'month') {
+        try {
+            const response = await ApiClient.get(`/workouts/stats?period=${period}`);
+            
+            if (response.success) {
+                return response.stats;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to get workout stats:', error);
+            throw error;
+        }
+    }
+
+    // Start workout timer
+    static startWorkoutTimer() {
+        this.workoutStartTime = new Date();
+        this.timerInterval = setInterval(() => {
+            this.updateWorkoutTimer();
+        }, 1000);
+    }
+
+    // Stop workout timer
+    static stopWorkoutTimer() {
+        if (this.timerInterval) {
+            clearInterval(this.timerInterval);
+            this.timerInterval = null;
+        }
+    }
+
+    // Update workout timer display
+    static updateWorkoutTimer() {
+        if (!this.workoutStartTime) return;
+
+        const now = new Date();
+        const duration = now - this.workoutStartTime;
+        const minutes = Math.floor(duration / 60000);
+        const seconds = Math.floor((duration % 60000) / 1000);
+
+        const timerElement = document.getElementById('workoutTimer');
+        if (timerElement) {
+            timerElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+    }
+
+    // Get workout duration
+    static getWorkoutDuration() {
+        if (!this.workoutStartTime) return 0;
+        return new Date() - this.workoutStartTime;
+    }
+
+    // Calculate calories burned
+    static calculateCaloriesBurned() {
+        if (!this.currentWorkout) return 0;
+
+        let totalCalories = 0;
+        this.currentWorkout.exercises.forEach(exercise => {
+            if (exercise.completed) {
+                // Basic calorie calculation based on exercise type and duration
+                const baseCalories = this.getExerciseCalories(exercise.type);
+                const duration = exercise.completionData?.duration || 0;
+                totalCalories += (baseCalories * duration) / 60; // Convert to minutes
+            }
+        });
+
+        return Math.round(totalCalories);
+    }
+
+    // Get base calories per minute for exercise type
+    static getExerciseCalories(exerciseType) {
+        const calorieMap = {
+            'cardio': 10,
+            'strength': 8,
+            'yoga': 4,
+            'hiit': 12,
+            'pilates': 5,
+            'dance': 7
+        };
+        return calorieMap[exerciseType] || 6;
+    }
+
+    // Load user preferences
+    static async loadUserPreferences() {
+        try {
+            const response = await ApiClient.get('/user/preferences');
+            if (response.success) {
+                this.userPreferences = response.preferences;
+            }
+        } catch (error) {
+            console.error('Failed to load user preferences:', error);
+        }
+    }
+
+    // Update user preferences
+    static async updatePreferences(preferences) {
+        try {
+            const response = await ApiClient.put('/user/preferences', preferences);
+            
+            if (response.success) {
+                this.userPreferences = response.preferences;
+                return response.preferences;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to update preferences:', error);
+            throw error;
+        }
+    }
+
+    // Get exercise library
+    static async getExerciseLibrary(category = null) {
+        try {
+            const url = category ? `/exercises?category=${category}` : '/exercises';
+            const response = await ApiClient.get(url);
+            
+            if (response.success) {
+                return response.exercises;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to get exercise library:', error);
+            throw error;
+        }
+    }
+
+    // Search exercises
+    static async searchExercises(query) {
+        try {
+            const response = await ApiClient.get(`/exercises/search?q=${encodeURIComponent(query)}`);
+            
+            if (response.success) {
+                return response.exercises;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to search exercises:', error);
+            throw error;
+        }
+    }
+
+    // Get workout plan by ID
+    static async getWorkoutPlan(planId) {
+        try {
+            const response = await ApiClient.get(`/workouts/plans/${planId}`);
+            
+            if (response.success) {
+                return response.workoutPlan;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to get workout plan:', error);
+            throw error;
+        }
+    }
+
+    // Create custom workout
+    static async createCustomWorkout(workoutData) {
+        try {
+            const response = await ApiClient.post('/workouts/custom', workoutData);
+            
+            if (response.success) {
+                return response.workout;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to create custom workout:', error);
+            throw error;
+        }
+    }
+
+    // Share workout
+    static async shareWorkout(workoutId, shareData) {
+        try {
+            const response = await ApiClient.post('/workouts/share', {
+                workoutId,
+                ...shareData
+            });
+            
+            if (response.success) {
+                return response.shareLink;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to share workout:', error);
+            throw error;
+        }
+    }
+
+    // Get workout progress
+    static async getWorkoutProgress(workoutId) {
+        try {
+            const response = await ApiClient.get(`/workouts/progress/${workoutId}`);
+            
+            if (response.success) {
+                return response.progress;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to get workout progress:', error);
+            throw error;
+        }
+    }
+
+    // Update workout progress
+    static async updateWorkoutProgress(workoutId, progressData) {
+        try {
+            const response = await ApiClient.put(`/workouts/progress/${workoutId}`, progressData);
+            
+            if (response.success) {
+                return response.progress;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to update workout progress:', error);
+            throw error;
+        }
+    }
+}
+</script>
+

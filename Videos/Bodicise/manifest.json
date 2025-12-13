@@ -1,0 +1,187 @@
+{
+  "name": "Bodicise - AI-Powered Fitness Platform",
+  "short_name": "Bodicise",
+  "description": "Transform your fitness journey with AI-powered workout plans, personalized training, and expert guidance.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["fitness", "health", "lifestyle", "sports"],
+  "icons": [
+    {
+      "src": "assets/images/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/images/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/images/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/images/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/images/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/images/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/images/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/images/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "assets/images/screenshot-mobile-1.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Home screen showing AI-powered workout recommendations"
+    },
+    {
+      "src": "assets/images/screenshot-mobile-2.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Workout tracking with real-time form analysis"
+    },
+    {
+      "src": "assets/images/screenshot-desktop-1.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Dashboard with progress tracking and AI insights"
+    },
+    {
+      "src": "assets/images/screenshot-desktop-2.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Workout plans library with personalized recommendations"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Start Workout",
+      "short_name": "Workout",
+      "description": "Start your daily AI-powered workout",
+      "url": "/views/workout-active.html",
+      "icons": [
+        {
+          "src": "assets/images/shortcut-workout.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View your fitness progress and stats",
+      "url": "/views/dashboard.html",
+      "icons": [
+        {
+          "src": "assets/images/shortcut-dashboard.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Generate Workout",
+      "short_name": "AI Workout",
+      "description": "Generate a personalized AI workout",
+      "url": "/views/workout-generator.html",
+      "icons": [
+        {
+          "src": "assets/images/shortcut-generator.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "related_applications": [
+    {
+      "platform": "play",
+      "url": "https://play.google.com/store/apps/details?id=com.bodicise.app",
+      "id": "com.bodicise.app"
+    },
+    {
+      "platform": "itunes",
+      "url": "https://apps.apple.com/app/bodicise/id123456789"
+    }
+  ],
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  },
+  "handle_links": "preferred",
+  "capture_links": "existing-client-navigate",
+  "protocol_handlers": [
+    {
+      "protocol": "web+bodicise",
+      "url": "/workout?id=%s"
+    }
+  ],
+  "file_handlers": [
+    {
+      "action": "/upload",
+      "accept": {
+        "image/*": [".jpg", ".jpeg", ".png", ".gif", ".webp"],
+        "video/*": [".mp4", ".mov", ".avi", ".webm"]
+      }
+    }
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "file",
+          "accept": ["image/*", "video/*"]
+        }
+      ]
+    }
+  }
+}
+

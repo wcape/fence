@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Bodicise</title>
+    <meta name="description" content="Your personal fitness dashboard with AI-powered insights and workout tracking.">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="/assets/css/main.css">
+    <link rel="stylesheet" href="/assets/css/components.css">
+    <link rel="stylesheet" href="/assets/css/responsive.css">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <img src="../assets/images/logo.png" alt="Bodicise" class="logo">
+                <span class="brand-text">Bodicise</span>
+            </div>
+            <div class="nav-menu">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/views/dashboard.html" class="nav-link active">Dashboard</a>
+                <a href="/views/workout-plans.html" class="nav-link">Workouts</a>
+                <a href="/views/progress.html" class="nav-link">Progress</a>
+                <a href="/views/profile.html" class="nav-link">Profile</a>
+            </div>
+            <div class="nav-auth">
+                <div class="user-menu">
+                    <span class="user-name" id="userName">Loading...</span>
+                    <div class="user-dropdown">
+                        <button class="dropdown-toggle" onclick="toggleUserMenu()">
+                            <img src="../assets/images/default-avatar.png" alt="Profile" class="user-avatar" id="userAvatar">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="dropdown-menu" id="userDropdown">
+                            <a href="profile.html" class="dropdown-item">
+                                <i class="fas fa-user"></i> Profile
+                            </a>
+                            <a href="settings.html" class="dropdown-item">
+                                <i class="fas fa-cog"></i> Settings
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a href="#" class="dropdown-item" onclick="AuthController.logout()">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="dashboard-main">
+        <div class="dashboard-container">
+            <!-- Welcome Section -->
+            <section class="welcome-section">
+                <div class="welcome-content">
+                    <h1 class="welcome-title">
+                        Welcome back, <span id="welcomeName">User</span>! 👋
+                    </h1>
+                    <p class="welcome-subtitle">
+                        Ready to crush your fitness goals today?
+                    </p>
+                </div>
+                <div class="welcome-actions">
+                    <button class="btn btn-primary" onclick="startQuickWorkout()">
+                        <i class="fas fa-play"></i>
+                        Start Workout
+                    </button>
+                    <button class="btn btn-outline" onclick="generateWorkout()">
+                        <i class="fas fa-magic"></i>
+                        AI Workout
+                    </button>
+                </div>
+            </section>
+
+            <!-- Stats Overview -->
+            <section class="stats-section">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-fire"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 class="stat-number" id="caloriesBurned">0</h3>
+                            <p class="stat-label">Calories Burned</p>
+                            <span class="stat-change positive">+12% this week</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-dumbbell"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 class="stat-number" id="workoutsCompleted">0</h3>
+                            <p class="stat-label">Workouts Completed</p>
+                            <span class="stat-change positive">+3 this week</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 class="stat-number" id="totalTime">0h</h3>
+                            <p class="stat-label">Total Time</p>
+                            <span class="stat-change positive">+45min this week</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-trophy"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 class="stat-number" id="streak">0</h3>
+                            <p class="stat-label">Day Streak</p>
+                            <span class="stat-change positive">Keep it up!</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Main Dashboard Grid -->
+            <div class="dashboard-grid">
+                <!-- Today's Workout -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Today's Workout</h3>
+                        <button class="btn btn-sm btn-outline" onclick="changeWorkout()">
+                            <i class="fas fa-sync"></i>
+                            Change
+                        </button>
+                    </div>
+                    <div class="card-content">
+                        <div class="workout-preview" id="todaysWorkout">
+                            <div class="workout-loading">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                <p>Loading today's workout...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Chart -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Progress Overview</h3>
+                        <div class="chart-controls">
+                            <button class="chart-btn active" onclick="updateChart('week')">Week</button>
+                            <button class="chart-btn" onclick="updateChart('month')">Month</button>
+                            <button class="chart-btn" onclick="updateChart('year')">Year</button>
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <canvas id="progressChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Recent Activity</h3>
+                        <a href="activity.html" class="btn btn-sm btn-outline">View All</a>
+                    </div>
+                    <div class="card-content">
+                        <div class="activity-list" id="recentActivity">
+                            <div class="activity-loading">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                <p>Loading recent activity...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Insights -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h3 class="card-title">AI Insights</h3>
+                        <button class="btn btn-sm btn-outline" onclick="refreshInsights()">
+                            <i class="fas fa-refresh"></i>
+                            Refresh
+                        </button>
+                    </div>
+                    <div class="card-content">
+                        <div class="insights-content" id="aiInsights">
+                            <div class="insights-loading">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                <p>Generating AI insights...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Quick Actions</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="quick-actions">
+                            <button class="quick-action-btn" onclick="logWeight()">
+                                <i class="fas fa-weight"></i>
+                                <span>Log Weight</span>
+                            </button>
+                            <button class="quick-action-btn" onclick="logMeal()">
+                                <i class="fas fa-utensils"></i>
+                                <span>Log Meal</span>
+                            </button>
+                            <button class="quick-action-btn" onclick="takePhoto()">
+                                <i class="fas fa-camera"></i>
+                                <span>Progress Photo</span>
+                            </button>
+                            <button class="quick-action-btn" onclick="setGoal()">
+                                <i class="fas fa-target"></i>
+                                <span>Set Goal</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upcoming Workouts -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Upcoming Workouts</h3>
+                        <a href="workout-plans.html" class="btn btn-sm btn-outline">View All</a>
+                    </div>
+                    <div class="card-content">
+                        <div class="upcoming-workouts" id="upcomingWorkouts">
+                            <div class="workouts-loading">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                <p>Loading upcoming workouts...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script src="/assets/js/app.js"></script>
+    <script src="/assets/js/api-client.js"></script>
+    <script src="/assets/js/utils.js"></script>
+    
+    <!-- Load Controllers -->
+    <script src="/controllers/auth-controller.html"></script>
+    <script src="/controllers/user-controller.html"></script>
+    <script src="/controllers/workout-controller.html"></script>
+    
+    <!-- Dashboard Scripts -->
+    <script>
+        let progressChart = null;
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDashboard();
+        });
+
+        async function initializeDashboard() {
+            try {
+                // Check authentication
+                AuthController.checkAuthStatus();
+                
+                // Load user data
+                await UserController.loadUserProfile();
+                updateUserInfo();
+                
+                // Load dashboard data
+                await loadDashboardData();
+                
+                // Initialize chart
+                initializeProgressChart();
+                
+            } catch (error) {
+                console.error('Failed to initialize dashboard:', error);
+            }
+        }
+
+        function updateUserInfo() {
+            const user = UserController.currentUser;
+            if (user) {
+                document.getElementById('welcomeName').textContent = user.firstName;
+                document.getElementById('userName').textContent = user.firstName;
+                document.getElementById('userAvatar').src = user.avatar || '../assets/images/default-avatar.png';
+            }
+        }
+
+        async function loadDashboardData() {
+            try {
+                // Load stats
+                const stats = await UserController.getUserStats();
+                updateStats(stats);
+                
+                // Load today's workout
+                await loadTodaysWorkout();
+                
+                // Load recent activity
+                await loadRecentActivity();
+                
+                // Load AI insights
+                await loadAIInsights();
+                
+                // Load upcoming workouts
+                await loadUpcomingWorkouts();
+                
+            } catch (error) {
+                console.error('Failed to load dashboard data:', error);
+            }
+        }
+
+        function updateStats(stats) {
+            document.getElementById('caloriesBurned').textContent = stats.caloriesBurned || 0;
+            document.getElementById('workoutsCompleted').textContent = stats.workoutsCompleted || 0;
+            document.getElementById('totalTime').textContent = `${stats.totalTime || 0}h`;
+            document.getElementById('streak').textContent = stats.streak || 0;
+        }
+
+        async function loadTodaysWorkout() {
+            try {
+                const workout = await WorkoutController.getTodaysWorkout();
+                displayTodaysWorkout(workout);
+            } catch (error) {
+                document.getElementById('todaysWorkout').innerHTML = `
+                    <div class="workout-error">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Failed to load today's workout</p>
+                        <button class="btn btn-sm btn-primary" onclick="generateWorkout()">
+                            Generate New Workout
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        function displayTodaysWorkout(workout) {
+            const container = document.getElementById('todaysWorkout');
+            container.innerHTML = `
+                <div class="workout-info">
+                    <h4 class="workout-name">${workout.name}</h4>
+                    <p class="workout-description">${workout.description}</p>
+                    <div class="workout-meta">
+                        <span class="workout-duration">
+                            <i class="fas fa-clock"></i>
+                            ${workout.duration} min
+                        </span>
+                        <span class="workout-difficulty">
+                            <i class="fas fa-signal"></i>
+                            ${workout.difficulty}
+                        </span>
+                        <span class="workout-calories">
+                            <i class="fas fa-fire"></i>
+                            ${workout.calories} cal
+                        </span>
+                    </div>
+                    <div class="workout-exercises">
+                        <h5>Exercises:</h5>
+                        <ul>
+                            ${workout.exercises.slice(0, 3).map(ex => `<li>${ex.name}</li>`).join('')}
+                            ${workout.exercises.length > 3 ? `<li>+${workout.exercises.length - 3} more</li>` : ''}
+                        </ul>
+                    </div>
+                    <button class="btn btn-primary btn-block" onclick="startWorkout('${workout.id}')">
+                        <i class="fas fa-play"></i>
+                        Start Workout
+                    </button>
+                </div>
+            `;
+        }
+
+        async function loadRecentActivity() {
+            try {
+                const activities = await UserController.getActivityFeed(1, 5);
+                displayRecentActivity(activities);
+            } catch (error) {
+                document.getElementById('recentActivity').innerHTML = `
+                    <div class="activity-error">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Failed to load recent activity</p>
+                    </div>
+                `;
+            }
+        }
+
+        function displayRecentActivity(activities) {
+            const container = document.getElementById('recentActivity');
+            container.innerHTML = activities.map(activity => `
+                <div class="activity-item">
+                    <div class="activity-icon">
+                        <i class="fas fa-${activity.icon}"></i>
+                    </div>
+                    <div class="activity-content">
+                        <p class="activity-text">${activity.text}</p>
+                        <span class="activity-time">${activity.time}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function loadAIInsights() {
+            try {
+                const insights = await WorkoutController.getAIInsights();
+                displayAIInsights(insights);
+            } catch (error) {
+                document.getElementById('aiInsights').innerHTML = `
+                    <div class="insights-error">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Failed to load AI insights</p>
+                    </div>
+                `;
+            }
+        }
+
+        function displayAIInsights(insights) {
+            const container = document.getElementById('aiInsights');
+            container.innerHTML = insights.map(insight => `
+                <div class="insight-item">
+                    <div class="insight-icon">
+                        <i class="fas fa-${insight.icon}"></i>
+                    </div>
+                    <div class="insight-content">
+                        <h5 class="insight-title">${insight.title}</h5>
+                        <p class="insight-text">${insight.text}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function loadUpcomingWorkouts() {
+            try {
+                const workouts = await WorkoutController.getUpcomingWorkouts();
+                displayUpcomingWorkouts(workouts);
+            } catch (error) {
+                document.getElementById('upcomingWorkouts').innerHTML = `
+                    <div class="workouts-error">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Failed to load upcoming workouts</p>
+                    </div>
+                `;
+            }
+        }
+
+        function displayUpcomingWorkouts(workouts) {
+            const container = document.getElementById('upcomingWorkouts');
+            container.innerHTML = workouts.map(workout => `
+                <div class="upcoming-workout">
+                    <div class="workout-date">
+                        <span class="date-day">${workout.date.day}</span>
+                        <span class="date-month">${workout.date.month}</span>
+                    </div>
+                    <div class="workout-details">
+                        <h5 class="workout-name">${workout.name}</h5>
+                        <p class="workout-type">${workout.type}</p>
+                        <span class="workout-duration">${workout.duration} min</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function initializeProgressChart() {
+            const ctx = document.getElementById('progressChart').getContext('2d');
+            progressChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Calories Burned',
+                        data: [300, 450, 200, 600, 350, 500, 400],
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateChart(period) {
+            // Update chart based on selected period
+            document.querySelectorAll('.chart-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Here you would fetch new data and update the chart
+            console.log(`Updating chart for ${period}`);
+        }
+
+        // Quick action functions
+        function startQuickWorkout() {
+            window.location.href = 'workout-active.html';
+        }
+
+        function generateWorkout() {
+            window.location.href = 'workout-generator.html';
+        }
+
+        function startWorkout(workoutId) {
+            window.location.href = `workout-active.html?id=${workoutId}`;
+        }
+
+        function changeWorkout() {
+            generateWorkout();
+        }
+
+        function refreshInsights() {
+            loadAIInsights();
+        }
+
+        function logWeight() {
+            // Open weight logging modal
+            console.log('Log weight');
+        }
+
+        function logMeal() {
+            // Open meal logging modal
+            console.log('Log meal');
+        }
+
+        function takePhoto() {
+            // Open camera for progress photo
+            console.log('Take progress photo');
+        }
+
+        function setGoal() {
+            // Open goal setting modal
+            console.log('Set goal');
+        }
+
+        function toggleUserMenu() {
+            const dropdown = document.getElementById('userDropdown');
+            dropdown.classList.toggle('show');
+        }
+    </script>
+</body>
+</html>

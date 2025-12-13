@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - Bodicise</title>
+    <meta name="description" content="Manage your profile, settings, and fitness goals on Bodicise.">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="../assets/css/components.css">
+    <link rel="stylesheet" href="../assets/css/responsive.css">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <img src="../assets/images/logo.png" alt="Bodicise" class="logo">
+                <span class="brand-text">Bodicise</span>
+            </div>
+            <div class="nav-menu">
+                <a href="../index.html" class="nav-link">Home</a>
+                <a href="dashboard.html" class="nav-link">Dashboard</a>
+                <a href="workout-plans.html" class="nav-link">Workouts</a>
+                <a href="progress.html" class="nav-link">Progress</a>
+                <a href="profile.html" class="nav-link active">Profile</a>
+            </div>
+            <div class="nav-auth">
+                <div class="user-menu">
+                    <span class="user-name" id="userName">Loading...</span>
+                    <div class="user-dropdown">
+                        <button class="dropdown-toggle" onclick="toggleUserMenu()">
+                            <img src="../assets/images/default-avatar.png" alt="Profile" class="user-avatar" id="userAvatar">
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="dropdown-menu" id="userDropdown">
+                            <a href="profile.html" class="dropdown-item">
+                                <i class="fas fa-user"></i> Profile
+                            </a>
+                            <a href="settings.html" class="dropdown-item">
+                                <i class="fas fa-cog"></i> Settings
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a href="#" class="dropdown-item" onclick="AuthController.logout()">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="profile-main">
+        <div class="container">
+            <!-- Profile Header -->
+            <section class="profile-header">
+                <div class="profile-avatar">
+                    <img src="../assets/images/default-avatar.png" alt="Profile" id="profileAvatar" class="avatar-large">
+                    <button class="avatar-upload-btn" onclick="uploadAvatar()">
+                        <i class="fas fa-camera"></i>
+                    </button>
+                </div>
+                <div class="profile-info">
+                    <h1 class="profile-name" id="profileName">Loading...</h1>
+                    <p class="profile-email" id="profileEmail">Loading...</p>
+                    <div class="profile-stats">
+                        <div class="stat">
+                            <span class="stat-number" id="workoutCount">0</span>
+                            <span class="stat-label">Workouts</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number" id="streakCount">0</span>
+                            <span class="stat-label">Day Streak</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number" id="caloriesCount">0</span>
+                            <span class="stat-label">Calories</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="profile-actions">
+                    <button class="btn btn-outline" onclick="editProfile()">
+                        <i class="fas fa-edit"></i>
+                        Edit Profile
+                    </button>
+                    <button class="btn btn-primary" onclick="shareProfile()">
+                        <i class="fas fa-share"></i>
+                        Share Profile
+                    </button>
+                </div>
+            </section>
+
+            <!-- Profile Content -->
+            <div class="profile-content">
+                <!-- Profile Tabs -->
+                <div class="profile-tabs">
+                    <button class="tab-btn active" onclick="switchTab('overview')">Overview</button>
+                    <button class="tab-btn" onclick="switchTab('goals')">Goals</button>
+                    <button class="tab-btn" onclick="switchTab('achievements')">Achievements</button>
+                    <button class="tab-btn" onclick="switchTab('social')">Social</button>
+                    <button class="tab-btn" onclick="switchTab('settings')">Settings</button>
+                </div>
+
+                <!-- Tab Content -->
+                <div class="tab-content">
+                    <!-- Overview Tab -->
+                    <div id="overviewTab" class="tab-panel active">
+                        <div class="profile-grid">
+                            <!-- Personal Information -->
+                            <div class="profile-card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Personal Information</h3>
+                                    <button class="btn btn-sm btn-outline" onclick="editPersonalInfo()">
+                                        <i class="fas fa-edit"></i>
+                                        Edit
+                                    </button>
+                                </div>
+                                <div class="card-content">
+                                    <div class="info-grid">
+                                        <div class="info-item">
+                                            <label>Full Name</label>
+                                            <span id="fullName">Loading...</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <label>Email</label>
+                                            <span id="userEmail">Loading...</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <label>Date of Birth</label>
+                                            <span id="dateOfBirth">Not set</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <label>Gender</label>
+                                            <span id="gender">Not set</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <label>Height</label>
+                                            <span id="height">Not set</span>
+                                        </div>
+                                        <div class="info-item">
+                                            <label>Weight</label>
+                                            <span id="weight">Not set</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Fitness Level -->
+                            <div class="profile-card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Fitness Level</h3>
+                                    <button class="btn btn-sm btn-outline" onclick="editFitnessLevel()">
+                                        <i class="fas fa-edit"></i>
+                                        Edit
+                                    </button>
+                                </div>
+                                <div class="card-content">
+                                    <div class="fitness-level">
+                                        <div class="level-indicator">
+                                            <div class="level-bar">
+                                                <div class="level-fill" id="fitnessLevelBar"></div>
+                                            </div>
+                                            <span class="level-text" id="fitnessLevelText">Beginner</span>
+                                        </div>
+                                        <p class="level-description" id="fitnessLevelDescription">
+                                            You're just starting your fitness journey. Keep it up!
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Recent Activity -->
+                            <div class="profile-card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Recent Activity</h3>
+                                    <a href="activity.html" class="btn btn-sm btn-outline">View All</a>
+                                </div>
+                                <div class="card-content">
+                                    <div class="activity-list" id="recentActivity">
+                                        <div class="activity-loading">
+                                            <i class="fas fa-spinner fa-spin"></i>
+                                            <p>Loading recent activity...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Progress Summary -->
+                            <div class="profile-card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Progress Summary</h3>
+                                    <a href="progress.html" class="btn btn-sm btn-outline">View Details</a>
+                                </div>
+                                <div class="card-content">
+                                    <div class="progress-summary">
+                                        <div class="progress-item">
+                                            <div class="progress-circle">
+                                                <svg viewBox="0 0 36 36" class="circular-chart">
+                                                    <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path>
+                                                    <path class="circle" stroke-dasharray="75, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path>
+                                                </svg>
+                                                <div class="percentage">75%</div>
+                                            </div>
+                                            <div class="progress-info">
+                                                <h4>Monthly Goal</h4>
+                                                <p>15 of 20 workouts completed</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Goals Tab -->
+                    <div id="goalsTab" class="tab-panel">
+                        <div class="goals-content">
+                            <div class="goals-header">
+                                <h3>Fitness Goals</h3>
+                                <button class="btn btn-primary" onclick="addGoal()">
+                                    <i class="fas fa-plus"></i>
+                                    Add Goal
+                                </button>
+                            </div>
+                            <div class="goals-grid" id="goalsGrid">
+                                <div class="loading-state">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    <p>Loading goals...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Achievements Tab -->
+                    <div id="achievementsTab" class="tab-panel">
+                        <div class="achievements-content">
+                            <div class="achievements-header">
+                                <h3>Achievements</h3>
+                                <div class="achievement-stats">
+                                    <span class="stat">
+                                        <i class="fas fa-trophy"></i>
+                                        <span id="achievementCount">0</span> earned
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="achievements-grid" id="achievementsGrid">
+                                <div class="loading-state">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                    <p>Loading achievements...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Social Tab -->
+                    <div id="socialTab" class="tab-panel">
+                        <div class="social-content">
+                            <div class="social-header">
+                                <h3>Social</h3>
+                                <div class="social-stats">
+                                    <div class="stat">
+                                        <span class="stat-number" id="followersCount">0</span>
+                                        <span class="stat-label">Followers</span>
+                                    </div>
+                                    <div class="stat">
+                                        <span class="stat-number" id="followingCount">0</span>
+                                        <span class="stat-label">Following</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="social-tabs">
+                                <button class="social-tab-btn active" onclick="switchSocialTab('followers')">Followers</button>
+                                <button class="social-tab-btn" onclick="switchSocialTab('following')">Following</button>
+                                <button class="social-tab-btn" onclick="switchSocialTab('find')">Find Friends</button>
+                            </div>
+                            <div class="social-content-panel">
+                                <div id="followersPanel" class="social-panel active">
+                                    <div class="users-list" id="followersList">
+                                        <div class="loading-state">
+                                            <i class="fas fa-spinner fa-spin"></i>
+                                            <p>Loading followers...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="followingPanel" class="social-panel">
+                                    <div class="users-list" id="followingList">
+                                        <div class="loading-state">
+                                            <i class="fas fa-spinner fa-spin"></i>
+                                            <p>Loading following...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="findPanel" class="social-panel">
+                                    <div class="find-friends">
+                                        <div class="search-box">
+                                            <input type="text" placeholder="Search for friends..." id="friendSearch">
+                                            <button class="btn btn-primary" onclick="searchFriends()">
+                                                <i class="fas fa-search"></i>
+                                            </button>
+                                        </div>
+                                        <div class="users-list" id="searchResults">
+                                            <p>Search for friends to connect with!</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Settings Tab -->
+                    <div id="settingsTab" class="tab-panel">
+                        <div class="settings-content">
+                            <div class="settings-header">
+                                <h3>Account Settings</h3>
+                            </div>
+                            <div class="settings-grid">
+                                <div class="settings-card">
+                                    <h4>Privacy Settings</h4>
+                                    <div class="setting-item">
+                                        <label class="switch">
+                                            <input type="checkbox" id="profilePublic" checked>
+                                            <span class="slider"></span>
+                                        </label>
+                                        <div class="setting-info">
+                                            <h5>Public Profile</h5>
+                                            <p>Allow others to view your profile</p>
+                                        </div>
+                                    </div>
+                                    <div class="setting-item">
+                                        <label class="switch">
+                                            <input type="checkbox" id="workoutHistoryPublic" checked>
+                                            <span class="slider"></span>
+                                        </label>
+                                        <div class="setting-info">
+                                            <h5>Public Workout History</h5>
+                                            <p>Allow others to view your workout history</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="settings-card">
+                                    <h4>Notification Settings</h4>
+                                    <div class="setting-item">
+                                        <label class="switch">
+                                            <input type="checkbox" id="emailNotifications" checked>
+                                            <span class="slider"></span>
+                                        </label>
+                                        <div class="setting-info">
+                                            <h5>Email Notifications</h5>
+                                            <p>Receive notifications via email</p>
+                                        </div>
+                                    </div>
+                                    <div class="setting-item">
+                                        <label class="switch">
+                                            <input type="checkbox" id="workoutReminders" checked>
+                                            <span class="slider"></span>
+                                        </label>
+                                        <div class="setting-info">
+                                            <h5>Workout Reminders</h5>
+                                            <p>Get reminded about scheduled workouts</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="settings-card">
+                                    <h4>Account Actions</h4>
+                                    <div class="setting-actions">
+                                        <button class="btn btn-outline" onclick="changePassword()">
+                                            <i class="fas fa-key"></i>
+                                            Change Password
+                                        </button>
+                                        <button class="btn btn-outline" onclick="exportData()">
+                                            <i class="fas fa-download"></i>
+                                            Export Data
+                                        </button>
+                                        <button class="btn btn-danger" onclick="deleteAccount()">
+                                            <i class="fas fa-trash"></i>
+                                            Delete Account
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script src="../assets/js/app.js"></script>
+    <script src="../assets/js/api-client.js"></script>
+    <script src="../assets/js/utils.js"></script>
+    
+    <!-- Load Controllers -->
+    <script src="../controllers/auth-controller.html"></script>
+    <script src="../controllers/user-controller.html"></script>
+    <script src="../controllers/workout-controller.html"></script>
+    
+    <!-- Profile Scripts -->
+    <script>
+        let currentTab = 'overview';
+        let currentSocialTab = 'followers';
+
+        // Initialize profile page
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeProfile();
+        });
+
+        async function initializeProfile() {
+            try {
+                // Check authentication
+                AuthController.checkAuthStatus();
+                
+                // Load user data
+                await UserController.loadUserProfile();
+                updateProfileInfo();
+                
+                // Load profile data
+                await loadProfileData();
+                
+            } catch (error) {
+                console.error('Failed to initialize profile:', error);
+            }
+        }
+
+        function updateProfileInfo() {
+            const user = UserController.currentUser;
+            if (user) {
+                document.getElementById('profileName').textContent = user.getFullName();
+                document.getElementById('profileEmail').textContent = user.email;
+                document.getElementById('userName').textContent = user.firstName;
+                document.getElementById('userAvatar').src = user.avatar || '../assets/images/default-avatar.png';
+                document.getElementById('profileAvatar').src = user.avatar || '../assets/images/default-avatar.png';
+                
+                // Update personal info
+                document.getElementById('fullName').textContent = user.getFullName();
+                document.getElementById('userEmail').textContent = user.email;
+                document.getElementById('dateOfBirth').textContent = user.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString() : 'Not set';
+                document.getElementById('gender').textContent = user.gender || 'Not set';
+                document.getElementById('height').textContent = user.height ? `${user.height} cm` : 'Not set';
+                document.getElementById('weight').textContent = user.weight ? `${user.weight} kg` : 'Not set';
+                
+                // Update fitness level
+                document.getElementById('fitnessLevelText').textContent = user.fitnessLevel.charAt(0).toUpperCase() + user.fitnessLevel.slice(1);
+                updateFitnessLevelBar(user.fitnessLevel);
+            }
+        }
+
+        function updateFitnessLevelBar(level) {
+            const levels = {
+                'beginner': { percentage: 33, description: 'You\'re just starting your fitness journey. Keep it up!' },
+                'intermediate': { percentage: 66, description: 'You have a solid foundation. Time to push yourself!' },
+                'advanced': { percentage: 100, description: 'You\'re a fitness pro! Keep challenging yourself!' }
+            };
+            
+            const levelData = levels[level] || levels['beginner'];
+            document.getElementById('fitnessLevelBar').style.width = `${levelData.percentage}%`;
+            document.getElementById('fitnessLevelDescription').textContent = levelData.description;
+        }
+
+        async function loadProfileData() {
+            try {
+                // Load user stats
+                const stats = await UserController.getUserStats();
+                updateProfileStats(stats);
+                
+                // Load recent activity
+                await loadRecentActivity();
+                
+                // Load goals
+                await loadGoals();
+                
+                // Load achievements
+                await loadAchievements();
+                
+                // Load social data
+                await loadSocialData();
+                
+            } catch (error) {
+                console.error('Failed to load profile data:', error);
+            }
+        }
+
+        function updateProfileStats(stats) {
+            document.getElementById('workoutCount').textContent = stats.workoutsCompleted || 0;
+            document.getElementById('streakCount').textContent = stats.streak || 0;
+            document.getElementById('caloriesCount').textContent = stats.caloriesBurned || 0;
+        }
+
+        async function loadRecentActivity() {
+            try {
+                const activities = await UserController.getActivityFeed(1, 5);
+                displayRecentActivity(activities);
+            } catch (error) {
+                document.getElementById('recentActivity').innerHTML = `
+                    <div class="activity-error">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Failed to load recent activity</p>
+                    </div>
+                `;
+            }
+        }
+
+        function displayRecentActivity(activities) {
+            const container = document.getElementById('recentActivity');
+            container.innerHTML = activities.map(activity => `
+                <div class="activity-item">
+                    <div class="activity-icon">
+                        <i class="fas fa-${activity.icon}"></i>
+                    </div>
+                    <div class="activity-content">
+                        <p class="activity-text">${activity.text}</p>
+                        <span class="activity-time">${activity.time}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function loadGoals() {
+            try {
+                const goals = await UserController.getFitnessGoals();
+                displayGoals(goals);
+            } catch (error) {
+                document.getElementById('goalsGrid').innerHTML = `
+                    <div class="error-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Failed to load goals</p>
+                    </div>
+                `;
+            }
+        }
+
+        function displayGoals(goals) {
+            const container = document.getElementById('goalsGrid');
+            if (goals.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-target"></i>
+                        <p>No goals set yet</p>
+                        <p>Set your first fitness goal to get started!</p>
+                        <button class="btn btn-primary" onclick="addGoal()">
+                            Add Goal
+                        </button>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = goals.map(goal => `
+                    <div class="goal-card">
+                        <div class="goal-header">
+                            <h4 class="goal-title">${goal.title}</h4>
+                            <span class="goal-status ${goal.status}">${goal.status}</span>
+                        </div>
+                        <p class="goal-description">${goal.description}</p>
+                        <div class="goal-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${goal.progress}%"></div>
+                            </div>
+                            <span class="progress-text">${goal.progress}%</span>
+                        </div>
+                        <div class="goal-meta">
+                            <span class="goal-deadline">
+                                <i class="fas fa-calendar"></i>
+                                ${goal.deadline}
+                            </span>
+                            <span class="goal-type">
+                                <i class="fas fa-tag"></i>
+                                ${goal.type}
+                            </span>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        async function loadAchievements() {
+            try {
+                const achievements = await UserController.getUserAchievements();
+                displayAchievements(achievements);
+            } catch (error) {
+                document.getElementById('achievementsGrid').innerHTML = `
+                    <div class="error-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Failed to load achievements</p>
+                    </div>
+                `;
+            }
+        }
+
+        function displayAchievements(achievements) {
+            const container = document.getElementById('achievementsGrid');
+            document.getElementById('achievementCount').textContent = achievements.length;
+            
+            container.innerHTML = achievements.map(achievement => `
+                <div class="achievement-card ${achievement.earned ? 'earned' : 'locked'}">
+                    <div class="achievement-icon">
+                        <i class="fas fa-${achievement.icon}"></i>
+                    </div>
+                    <div class="achievement-content">
+                        <h4 class="achievement-title">${achievement.title}</h4>
+                        <p class="achievement-description">${achievement.description}</p>
+                        <div class="achievement-meta">
+                            <span class="achievement-date">${achievement.earnedAt ? new Date(achievement.earnedAt).toLocaleDateString() : 'Not earned'}</span>
+                            <span class="achievement-points">${achievement.points} pts</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function loadSocialData() {
+            try {
+                const followers = await UserController.getUserFollowers();
+                const following = await UserController.getUserFollowing();
+                
+                document.getElementById('followersCount').textContent = followers.length;
+                document.getElementById('followingCount').textContent = following.length;
+                
+                displayFollowers(followers);
+                displayFollowing(following);
+                
+            } catch (error) {
+                console.error('Failed to load social data:', error);
+            }
+        }
+
+        function displayFollowers(followers) {
+            const container = document.getElementById('followersList');
+            if (followers.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-users"></i>
+                        <p>No followers yet</p>
+                        <p>Share your profile to get followers!</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = followers.map(follower => `
+                    <div class="user-item">
+                        <img src="${follower.avatar || '../assets/images/default-avatar.png'}" alt="${follower.name}" class="user-avatar">
+                        <div class="user-info">
+                            <h5 class="user-name">${follower.name}</h5>
+                            <p class="user-title">${follower.title || 'Fitness Enthusiast'}</p>
+                        </div>
+                        <button class="btn btn-sm btn-outline" onclick="viewProfile('${follower.id}')">
+                            View Profile
+                        </button>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function displayFollowing(following) {
+            const container = document.getElementById('followingList');
+            if (following.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-user-plus"></i>
+                        <p>Not following anyone yet</p>
+                        <p>Find friends to follow and stay motivated!</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = following.map(user => `
+                    <div class="user-item">
+                        <img src="${user.avatar || '../assets/images/default-avatar.png'}" alt="${user.name}" class="user-avatar">
+                        <div class="user-info">
+                            <h5 class="user-name">${user.name}</h5>
+                            <p class="user-title">${user.title || 'Fitness Enthusiast'}</p>
+                        </div>
+                        <button class="btn btn-sm btn-outline" onclick="viewProfile('${user.id}')">
+                            View Profile
+                        </button>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Tab functions
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.remove('active'));
+            document.getElementById(`${tab}Tab`).classList.add('active');
+        }
+
+        function switchSocialTab(tab) {
+            currentSocialTab = tab;
+            
+            document.querySelectorAll('.social-tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.querySelectorAll('.social-panel').forEach(panel => panel.classList.remove('active'));
+            document.getElementById(`${tab}Panel`).classList.add('active');
+        }
+
+        // Action functions
+        function uploadAvatar() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = async function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    try {
+                        const avatarUrl = await UserController.uploadProfilePicture(file);
+                        document.getElementById('profileAvatar').src = avatarUrl;
+                        document.getElementById('userAvatar').src = avatarUrl;
+                    } catch (error) {
+                        Utils.showNotification('Failed to upload avatar.', 'error');
+                    }
+                }
+            };
+            input.click();
+        }
+
+        function editProfile() {
+            // Open profile edit modal
+            console.log('Edit profile');
+        }
+
+        function shareProfile() {
+            // Share profile functionality
+            console.log('Share profile');
+        }
+
+        function addGoal() {
+            // Open goal creation modal
+            console.log('Add goal');
+        }
+
+        function changePassword() {
+            // Open password change modal
+            console.log('Change password');
+        }
+
+        function exportData() {
+            // Export user data
+            console.log('Export data');
+        }
+
+        function deleteAccount() {
+            // Confirm account deletion
+            if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+                console.log('Delete account');
+            }
+        }
+
+        function viewProfile(userId) {
+            // View user profile
+            console.log('View profile:', userId);
+        }
+
+        function searchFriends() {
+            const query = document.getElementById('friendSearch').value;
+            if (query.trim()) {
+                console.log('Search friends:', query);
+            }
+        }
+
+        function toggleUserMenu() {
+            const dropdown = document.getElementById('userDropdown');
+            dropdown.classList.toggle('show');
+        }
+    </script>
+</body>
+</html>
+

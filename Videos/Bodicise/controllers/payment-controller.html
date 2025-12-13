@@ -1,0 +1,527 @@
+<!-- Payment Controller - Handles payment processing with Stripe -->
+<script>
+class PaymentController {
+    static stripe = null;
+    static currentPlan = null;
+    static paymentIntent = null;
+
+    // Initialize Stripe
+    static async init() {
+        try {
+            // Load Stripe.js
+            if (!window.Stripe) {
+                const script = document.createElement('script');
+                script.src = 'https://js.stripe.com/v3/';
+                script.onload = () => {
+                    this.stripe = Stripe('pk_test_your_stripe_publishable_key');
+                };
+                document.head.appendChild(script);
+            } else {
+                this.stripe = Stripe('pk_test_your_stripe_publishable_key');
+            }
+        } catch (error) {
+            console.error('Failed to initialize Stripe:', error);
+        }
+    }
+
+    // Show payment modal
+    static showPayment(plan) {
+        this.currentPlan = plan;
+        const modal = document.getElementById('paymentModal');
+        const formContainer = document.getElementById('paymentForm');
+        
+        const planDetails = this.getPlanDetails(plan);
+        
+        formContainer.innerHTML = `
+            <div class="payment-form">
+                <h2 class="payment-title">Complete Your Subscription</h2>
+                <p class="payment-subtitle">Choose your payment method and start your fitness journey</p>
+                
+                <div class="plan-summary">
+                    <div class="plan-info">
+                        <h3 class="plan-name">${planDetails.name}</h3>
+                        <div class="plan-price">
+                            <span class="price-amount">$${planDetails.price}</span>
+                            <span class="price-period">/${planDetails.period}</span>
+                        </div>
+                        <ul class="plan-features">
+                            ${planDetails.features.map(feature => `<li><i class="fas fa-check"></i> ${feature}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+                
+                <form id="paymentFormElement" onsubmit="PaymentController.handlePayment(event)">
+                    <div class="payment-methods">
+                        <h4 class="payment-methods-title">Payment Method</h4>
+                        
+                        <div class="payment-method-tabs">
+                            <button type="button" class="payment-tab active" onclick="PaymentController.switchPaymentMethod('card')">
+                                <i class="fas fa-credit-card"></i>
+                                Credit Card
+                            </button>
+                            <button type="button" class="payment-tab" onclick="PaymentController.switchPaymentMethod('paypal')">
+                                <i class="fab fa-paypal"></i>
+                                PayPal
+                            </button>
+                            <button type="button" class="payment-tab" onclick="PaymentController.switchPaymentMethod('apple')">
+                                <i class="fab fa-apple-pay"></i>
+                                Apple Pay
+                            </button>
+                        </div>
+                        
+                        <div id="cardPayment" class="payment-method-content active">
+                            <div class="form-group">
+                                <label for="cardNumber">Card Number</label>
+                                <div class="card-input-container">
+                                    <input type="text" id="cardNumber" name="cardNumber" 
+                                           placeholder="1234 5678 9012 3456" maxlength="19">
+                                    <div class="card-icons">
+                                        <i class="fab fa-cc-visa"></i>
+                                        <i class="fab fa-cc-mastercard"></i>
+                                        <i class="fab fa-cc-amex"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="expiryDate">Expiry Date</label>
+                                    <input type="text" id="expiryDate" name="expiryDate" 
+                                           placeholder="MM/YY" maxlength="5">
+                                </div>
+                                <div class="form-group">
+                                    <label for="cvv">CVV</label>
+                                    <input type="text" id="cvv" name="cvv" 
+                                           placeholder="123" maxlength="4">
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="cardholderName">Cardholder Name</label>
+                                <input type="text" id="cardholderName" name="cardholderName" 
+                                       placeholder="John Doe">
+                            </div>
+                        </div>
+                        
+                        <div id="paypalPayment" class="payment-method-content">
+                            <div class="paypal-container">
+                                <p>You will be redirected to PayPal to complete your payment</p>
+                                <button type="button" class="btn btn-paypal" onclick="PaymentController.handlePayPalPayment()">
+                                    <i class="fab fa-paypal"></i>
+                                    Pay with PayPal
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="applePayment" class="payment-method-content">
+                            <div class="apple-pay-container">
+                                <p>Complete your payment securely with Apple Pay</p>
+                                <button type="button" class="btn btn-apple-pay" onclick="PaymentController.handleApplePayment()">
+                                    <i class="fab fa-apple-pay"></i>
+                                    Pay with Apple Pay
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="billing-info">
+                        <h4 class="billing-title">Billing Information</h4>
+                        
+                        <div class="form-group">
+                            <label for="billingEmail">Email Address</label>
+                            <input type="email" id="billingEmail" name="billingEmail" 
+                                   placeholder="your@email.com" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="billingAddress">Address</label>
+                            <input type="text" id="billingAddress" name="billingAddress" 
+                                   placeholder="123 Main St" required>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="billingCity">City</label>
+                                <input type="text" id="billingCity" name="billingCity" 
+                                       placeholder="New York" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="billingState">State</label>
+                                <input type="text" id="billingState" name="billingState" 
+                                       placeholder="NY" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="billingZip">ZIP Code</label>
+                                <input type="text" id="billingZip" name="billingZip" 
+                                       placeholder="10001" required>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="billingCountry">Country</label>
+                            <select id="billingCountry" name="billingCountry" required>
+                                <option value="">Select Country</option>
+                                <option value="US">United States</option>
+                                <option value="CA">Canada</option>
+                                <option value="GB">United Kingdom</option>
+                                <option value="AU">Australia</option>
+                                <option value="DE">Germany</option>
+                                <option value="FR">France</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="payment-summary">
+                        <div class="summary-row">
+                            <span>Plan</span>
+                            <span>${planDetails.name}</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Billing Period</span>
+                            <span>${planDetails.period}</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Subtotal</span>
+                            <span>$${planDetails.price}</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Tax</span>
+                            <span>$0.00</span>
+                        </div>
+                        <div class="summary-row total">
+                            <span>Total</span>
+                            <span>$${planDetails.price}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="payment-terms">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="terms" required>
+                            <span class="checkmark"></span>
+                            I agree to the <a href="#" target="_blank">Terms of Service</a> and <a href="#" target="_blank">Privacy Policy</a>
+                        </label>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-block btn-lg">
+                        <i class="fas fa-lock"></i>
+                        Complete Payment - $${planDetails.price}
+                    </button>
+                </form>
+                
+                <div class="payment-security">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Your payment information is secure and encrypted</span>
+                </div>
+            </div>
+        `;
+        
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+        
+        // Setup form validation
+        this.setupFormValidation();
+    }
+
+    // Hide payment modal
+    static hidePayment() {
+        const modal = document.getElementById('paymentModal');
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+
+    // Get plan details
+    static getPlanDetails(plan) {
+        const plans = {
+            free: {
+                name: 'Free Plan',
+                price: '0',
+                period: 'month',
+                features: [
+                    'Basic workout plans',
+                    'Limited AI analysis',
+                    'Community access'
+                ]
+            },
+            pro: {
+                name: 'Pro Plan',
+                price: '29',
+                period: 'month',
+                features: [
+                    'Unlimited AI workouts',
+                    'Real-time form analysis',
+                    'Advanced progress tracking',
+                    'Personalized nutrition plans',
+                    'Priority support'
+                ]
+            },
+            elite: {
+                name: 'Elite Plan',
+                price: '49',
+                period: 'month',
+                features: [
+                    'Everything in Pro',
+                    '1-on-1 AI coaching',
+                    'Custom meal plans',
+                    'Advanced analytics',
+                    'White-label options'
+                ]
+            }
+        };
+        
+        return plans[plan] || plans.free;
+    }
+
+    // Switch payment method
+    static switchPaymentMethod(method) {
+        // Update tab states
+        document.querySelectorAll('.payment-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        document.querySelector(`[onclick*="${method}"]`).classList.add('active');
+        
+        // Update content visibility
+        document.querySelectorAll('.payment-method-content').forEach(content => {
+            content.classList.remove('active');
+        });
+        document.getElementById(`${method}Payment`).classList.add('active');
+    }
+
+    // Handle payment form submission
+    static async handlePayment(event) {
+        event.preventDefault();
+        
+        const formData = new FormData(event.target);
+        const paymentData = {
+            plan: this.currentPlan,
+            cardNumber: formData.get('cardNumber'),
+            expiryDate: formData.get('expiryDate'),
+            cvv: formData.get('cvv'),
+            cardholderName: formData.get('cardholderName'),
+            billingEmail: formData.get('billingEmail'),
+            billingAddress: formData.get('billingAddress'),
+            billingCity: formData.get('billingCity'),
+            billingState: formData.get('billingState'),
+            billingZip: formData.get('billingZip'),
+            billingCountry: formData.get('billingCountry')
+        };
+
+        try {
+            // Show loading state
+            const submitButton = event.target.querySelector('button[type="submit"]');
+            const originalText = submitButton.innerHTML;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            submitButton.disabled = true;
+
+            // Create payment intent
+            const response = await ApiClient.post('/payment/create-intent', {
+                plan: this.currentPlan,
+                amount: this.getPlanDetails(this.currentPlan).price * 100, // Convert to cents
+                currency: 'usd'
+            });
+
+            if (response.success) {
+                this.paymentIntent = response.paymentIntent;
+                
+                // Confirm payment with Stripe
+                const result = await this.stripe.confirmCardPayment(
+                    this.paymentIntent.client_secret,
+                    {
+                        payment_method: {
+                            card: {
+                                number: paymentData.cardNumber,
+                                exp_month: paymentData.expiryDate.split('/')[0],
+                                exp_year: '20' + paymentData.expiryDate.split('/')[1],
+                                cvc: paymentData.cvv
+                            },
+                            billing_details: {
+                                name: paymentData.cardholderName,
+                                email: paymentData.billingEmail,
+                                address: {
+                                    line1: paymentData.billingAddress,
+                                    city: paymentData.billingCity,
+                                    state: paymentData.billingState,
+                                    postal_code: paymentData.billingZip,
+                                    country: paymentData.billingCountry
+                                }
+                            }
+                        }
+                    }
+                );
+
+                if (result.error) {
+                    this.showError(result.error.message);
+                } else {
+                    // Payment successful
+                    await this.handlePaymentSuccess(result.paymentIntent);
+                }
+            } else {
+                this.showError(response.message);
+            }
+        } catch (error) {
+            this.showError('Payment failed. Please try again.');
+            console.error('Payment error:', error);
+        } finally {
+            // Reset button state
+            const submitButton = event.target.querySelector('button[type="submit"]');
+            submitButton.innerHTML = originalText;
+            submitButton.disabled = false;
+        }
+    }
+
+    // Handle PayPal payment
+    static async handlePayPalPayment() {
+        try {
+            const response = await ApiClient.post('/payment/paypal', {
+                plan: this.currentPlan,
+                amount: this.getPlanDetails(this.currentPlan).price
+            });
+
+            if (response.success) {
+                // Redirect to PayPal
+                window.location.href = response.paypalUrl;
+            } else {
+                this.showError('PayPal payment failed. Please try again.');
+            }
+        } catch (error) {
+            this.showError('PayPal payment failed. Please try again.');
+            console.error('PayPal payment error:', error);
+        }
+    }
+
+    // Handle Apple Pay payment
+    static async handleApplePayment() {
+        try {
+            if (!window.ApplePaySession) {
+                this.showError('Apple Pay is not available on this device.');
+                return;
+            }
+
+            const response = await ApiClient.post('/payment/apple-pay', {
+                plan: this.currentPlan,
+                amount: this.getPlanDetails(this.currentPlan).price
+            });
+
+            if (response.success) {
+                // Initialize Apple Pay session
+                const session = new ApplePaySession(3, {
+                    countryCode: 'US',
+                    currencyCode: 'USD',
+                    merchantCapabilities: ['supports3DS'],
+                    supportedNetworks: ['visa', 'masterCard', 'amex'],
+                    total: {
+                        label: 'Bodicise Subscription',
+                        amount: this.getPlanDetails(this.currentPlan).price
+                    }
+                });
+
+                session.onvalidatemerchant = (event) => {
+                    // Validate merchant
+                    session.completeMerchantValidation(response.merchantValidation);
+                };
+
+                session.onpaymentauthorized = (event) => {
+                    // Process payment
+                    this.processApplePayment(event.payment);
+                    session.completePayment(ApplePaySession.STATUS_SUCCESS);
+                };
+
+                session.begin();
+            } else {
+                this.showError('Apple Pay payment failed. Please try again.');
+            }
+        } catch (error) {
+            this.showError('Apple Pay payment failed. Please try again.');
+            console.error('Apple Pay payment error:', error);
+        }
+    }
+
+    // Process Apple Pay payment
+    static async processApplePayment(payment) {
+        try {
+            const response = await ApiClient.post('/payment/apple-pay/process', {
+                plan: this.currentPlan,
+                payment: payment
+            });
+
+            if (response.success) {
+                await this.handlePaymentSuccess(response.paymentIntent);
+            } else {
+                this.showError('Apple Pay payment failed. Please try again.');
+            }
+        } catch (error) {
+            this.showError('Apple Pay payment failed. Please try again.');
+            console.error('Apple Pay payment error:', error);
+        }
+    }
+
+    // Handle successful payment
+    static async handlePaymentSuccess(paymentIntent) {
+        try {
+            // Update user subscription
+            const response = await ApiClient.post('/payment/success', {
+                paymentIntentId: paymentIntent.id,
+                plan: this.currentPlan
+            });
+
+            if (response.success) {
+                this.hidePayment();
+                this.showSuccess('Payment successful! Welcome to Bodicise Pro!');
+                
+                // Redirect to dashboard
+                setTimeout(() => {
+                    window.location.href = 'views/dashboard.html';
+                }, 2000);
+            } else {
+                this.showError('Payment processed but subscription update failed. Please contact support.');
+            }
+        } catch (error) {
+            this.showError('Payment processed but subscription update failed. Please contact support.');
+            console.error('Payment success error:', error);
+        }
+    }
+
+    // Setup form validation
+    static setupFormValidation() {
+        // Card number formatting
+        const cardNumberInput = document.getElementById('cardNumber');
+        if (cardNumberInput) {
+            cardNumberInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\s/g, '').replace(/[^0-9]/gi, '');
+                let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
+                e.target.value = formattedValue;
+            });
+        }
+
+        // Expiry date formatting
+        const expiryInput = document.getElementById('expiryDate');
+        if (expiryInput) {
+            expiryInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length >= 2) {
+                    value = value.substring(0, 2) + '/' + value.substring(2, 4);
+                }
+                e.target.value = value;
+            });
+        }
+
+        // CVV formatting
+        const cvvInput = document.getElementById('cvv');
+        if (cvvInput) {
+            cvvInput.addEventListener('input', function(e) {
+                e.target.value = e.target.value.replace(/\D/g, '');
+            });
+        }
+    }
+
+    // Show error message
+    static showError(message) {
+        Utils.showNotification(message, 'error');
+    }
+
+    // Show success message
+    static showSuccess(message) {
+        Utils.showNotification(message, 'success');
+    }
+}
+</script>
+

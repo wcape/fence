@@ -1,0 +1,375 @@
+<!-- Workout Model - Handles workout data structure and validation -->
+<script>
+class WorkoutModel {
+    constructor(data = {}) {
+        this.id = data.id || null;
+        this.name = data.name || '';
+        this.description = data.description || '';
+        this.type = data.type || 'mixed';
+        this.category = data.category || 'general';
+        this.difficulty = data.difficulty || 'beginner';
+        this.duration = data.duration || 30;
+        this.calories = data.calories || 0;
+        this.image = data.image || null;
+        this.video = data.video || null;
+        this.equipment = data.equipment || [];
+        this.muscleGroups = data.muscleGroups || [];
+        this.exercises = data.exercises || [];
+        this.tags = data.tags || [];
+        this.rating = data.rating || 0;
+        this.reviews = data.reviews || [];
+        this.createdBy = data.createdBy || null;
+        this.isCustom = data.isCustom || false;
+        this.isPublic = data.isPublic || true;
+        this.isFavorite = data.isFavorite || false;
+        this.createdAt = data.createdAt || new Date();
+        this.updatedAt = data.updatedAt || new Date();
+        this.lastCompleted = data.lastCompleted || null;
+        this.completionCount = data.completionCount || 0;
+        this.averageRating = data.averageRating || 0;
+        this.totalRatings = data.totalRatings || 0;
+        this.prerequisites = data.prerequisites || [];
+        this.warmup = data.warmup || [];
+        this.cooldown = data.cooldown || [];
+        this.notes = data.notes || '';
+        this.goals = data.goals || [];
+        this.targetAudience = data.targetAudience || [];
+        this.language = data.language || 'en';
+        this.isActive = data.isActive !== undefined ? data.isActive : true;
+    }
+
+    // Validation methods
+    validate() {
+        const errors = [];
+
+        if (!this.name || this.name.trim().length < 3) {
+            errors.push('Workout name must be at least 3 characters');
+        }
+
+        if (!this.description || this.description.trim().length < 10) {
+            errors.push('Workout description must be at least 10 characters');
+        }
+
+        if (!this.type || !this.isValidType(this.type)) {
+            errors.push('Valid workout type is required');
+        }
+
+        if (!this.difficulty || !this.isValidDifficulty(this.difficulty)) {
+            errors.push('Valid difficulty level is required');
+        }
+
+        if (!this.duration || this.duration < 5 || this.duration > 180) {
+            errors.push('Duration must be between 5 and 180 minutes');
+        }
+
+        if (!this.exercises || this.exercises.length === 0) {
+            errors.push('At least one exercise is required');
+        }
+
+        if (this.rating && (this.rating < 0 || this.rating > 5)) {
+            errors.push('Rating must be between 0 and 5');
+        }
+
+        return {
+            isValid: errors.length === 0,
+            errors: errors
+        };
+    }
+
+    isValidType(type) {
+        return ['strength', 'cardio', 'hiit', 'yoga', 'pilates', 'dance', 'mixed'].includes(type);
+    }
+
+    isValidDifficulty(difficulty) {
+        return ['beginner', 'intermediate', 'advanced'].includes(difficulty);
+    }
+
+    // Data transformation methods
+    toJSON() {
+        return {
+            id: this.id,
+            name: this.name,
+            description: this.description,
+            type: this.type,
+            category: this.category,
+            difficulty: this.difficulty,
+            duration: this.duration,
+            calories: this.calories,
+            image: this.image,
+            video: this.video,
+            equipment: this.equipment,
+            muscleGroups: this.muscleGroups,
+            exercises: this.exercises,
+            tags: this.tags,
+            rating: this.rating,
+            reviews: this.reviews,
+            createdBy: this.createdBy,
+            isCustom: this.isCustom,
+            isPublic: this.isPublic,
+            isFavorite: this.isFavorite,
+            createdAt: this.createdAt,
+            updatedAt: this.updatedAt,
+            lastCompleted: this.lastCompleted,
+            completionCount: this.completionCount,
+            averageRating: this.averageRating,
+            totalRatings: this.totalRatings,
+            prerequisites: this.prerequisites,
+            warmup: this.warmup,
+            cooldown: this.cooldown,
+            notes: this.notes,
+            goals: this.goals,
+            targetAudience: this.targetAudience,
+            language: this.language,
+            isActive: this.isActive
+        };
+    }
+
+    static fromJSON(data) {
+        return new WorkoutModel(data);
+    }
+
+    // Update methods
+    updateWorkout(workoutData) {
+        const allowedFields = [
+            'name', 'description', 'type', 'category', 'difficulty',
+            'duration', 'calories', 'image', 'video', 'equipment',
+            'muscleGroups', 'exercises', 'tags', 'notes', 'goals'
+        ];
+
+        allowedFields.forEach(field => {
+            if (workoutData[field] !== undefined) {
+                this[field] = workoutData[field];
+            }
+        });
+
+        this.updatedAt = new Date();
+    }
+
+    addExercise(exercise) {
+        this.exercises.push(exercise);
+        this.updatedAt = new Date();
+    }
+
+    removeExercise(exerciseId) {
+        this.exercises = this.exercises.filter(ex => ex.id !== exerciseId);
+        this.updatedAt = new Date();
+    }
+
+    updateExercise(exerciseId, exerciseData) {
+        const exerciseIndex = this.exercises.findIndex(ex => ex.id === exerciseId);
+        if (exerciseIndex !== -1) {
+            this.exercises[exerciseIndex] = { ...this.exercises[exerciseIndex], ...exerciseData };
+            this.updatedAt = new Date();
+        }
+    }
+
+    // Rating methods
+    addRating(rating, userId) {
+        const existingRating = this.reviews.find(review => review.userId === userId);
+        
+        if (existingRating) {
+            existingRating.rating = rating;
+            existingRating.updatedAt = new Date();
+        } else {
+            this.reviews.push({
+                userId: userId,
+                rating: rating,
+                createdAt: new Date(),
+                updatedAt: new Date()
+            });
+        }
+
+        this.calculateAverageRating();
+        this.updatedAt = new Date();
+    }
+
+    calculateAverageRating() {
+        if (this.reviews.length === 0) {
+            this.averageRating = 0;
+            this.totalRatings = 0;
+            return;
+        }
+
+        const totalRating = this.reviews.reduce((sum, review) => sum + review.rating, 0);
+        this.averageRating = (totalRating / this.reviews.length).toFixed(1);
+        this.totalRatings = this.reviews.length;
+    }
+
+    // Completion methods
+    markCompleted(userId, completionData = {}) {
+        this.lastCompleted = new Date();
+        this.completionCount++;
+        this.updatedAt = new Date();
+
+        // Store completion data
+        if (!this.completionHistory) {
+            this.completionHistory = [];
+        }
+
+        this.completionHistory.push({
+            userId: userId,
+            completedAt: new Date(),
+            duration: completionData.duration || this.duration,
+            calories: completionData.calories || this.calories,
+            exercisesCompleted: completionData.exercisesCompleted || this.exercises.length,
+            notes: completionData.notes || ''
+        });
+    }
+
+    // Favorite methods
+    toggleFavorite(userId) {
+        this.isFavorite = !this.isFavorite;
+        this.updatedAt = new Date();
+    }
+
+    // Equipment methods
+    addEquipment(equipment) {
+        if (!this.equipment.includes(equipment)) {
+            this.equipment.push(equipment);
+            this.updatedAt = new Date();
+        }
+    }
+
+    removeEquipment(equipment) {
+        this.equipment = this.equipment.filter(eq => eq !== equipment);
+        this.updatedAt = new Date();
+    }
+
+    hasEquipment(equipment) {
+        return this.equipment.includes(equipment);
+    }
+
+    // Muscle group methods
+    addMuscleGroup(muscleGroup) {
+        if (!this.muscleGroups.includes(muscleGroup)) {
+            this.muscleGroups.push(muscleGroup);
+            this.updatedAt = new Date();
+        }
+    }
+
+    removeMuscleGroup(muscleGroup) {
+        this.muscleGroups = this.muscleGroups.filter(mg => mg !== muscleGroup);
+        this.updatedAt = new Date();
+    }
+
+    // Tag methods
+    addTag(tag) {
+        if (!this.tags.includes(tag)) {
+            this.tags.push(tag);
+            this.updatedAt = new Date();
+        }
+    }
+
+    removeTag(tag) {
+        this.tags = this.tags.filter(t => t !== tag);
+        this.updatedAt = new Date();
+    }
+
+    // Utility methods
+    getTotalExercises() {
+        return this.exercises.length;
+    }
+
+    getEstimatedCalories(userWeight = 70) {
+        // Basic calorie estimation based on workout type and duration
+        const baseCaloriesPerMinute = {
+            'strength': 6,
+            'cardio': 10,
+            'hiit': 12,
+            'yoga': 4,
+            'pilates': 5,
+            'dance': 7,
+            'mixed': 8
+        };
+
+        const baseCalories = baseCaloriesPerMinute[this.type] || 6;
+        const weightMultiplier = userWeight / 70; // Normalize to 70kg
+        return Math.round(baseCalories * this.duration * weightMultiplier);
+    }
+
+    getDifficultyLevel() {
+        const difficultyLevels = {
+            'beginner': 1,
+            'intermediate': 2,
+            'advanced': 3
+        };
+        return difficultyLevels[this.difficulty] || 1;
+    }
+
+    getWorkoutIntensity() {
+        // Calculate workout intensity based on exercises and duration
+        const totalExerciseTime = this.exercises.reduce((total, exercise) => {
+            return total + (exercise.duration || exercise.sets * exercise.reps * 2);
+        }, 0);
+
+        const intensity = totalExerciseTime / this.duration;
+        return Math.min(intensity, 1);
+    }
+
+    // Search methods
+    matchesSearch(query) {
+        const searchTerms = query.toLowerCase().split(' ');
+        const searchableText = [
+            this.name,
+            this.description,
+            this.type,
+            this.category,
+            this.difficulty,
+            ...this.tags,
+            ...this.muscleGroups,
+            ...this.equipment
+        ].join(' ').toLowerCase();
+
+        return searchTerms.every(term => searchableText.includes(term));
+    }
+
+    // Filter methods
+    matchesFilter(filter) {
+        if (filter.category && this.category !== filter.category) return false;
+        if (filter.difficulty && this.difficulty !== filter.difficulty) return false;
+        if (filter.type && this.type !== filter.type) return false;
+        if (filter.equipment && !this.hasEquipment(filter.equipment)) return false;
+        if (filter.minDuration && this.duration < filter.minDuration) return false;
+        if (filter.maxDuration && this.duration > filter.maxDuration) return false;
+        if (filter.minRating && this.averageRating < filter.minRating) return false;
+        
+        return true;
+    }
+
+    // Clone method
+    clone() {
+        return new WorkoutModel(this.toJSON());
+    }
+
+    // Reset method
+    reset() {
+        Object.keys(this).forEach(key => {
+            if (typeof this[key] === 'function') return;
+            this[key] = null;
+        });
+        this.createdAt = new Date();
+        this.updatedAt = new Date();
+        this.isActive = true;
+        this.exercises = [];
+        this.equipment = [];
+        this.muscleGroups = [];
+        this.tags = [];
+        this.reviews = [];
+        this.goals = [];
+        this.prerequisites = [];
+        this.warmup = [];
+        this.cooldown = [];
+    }
+
+    // Export method
+    exportData() {
+        return {
+            workout: this.toJSON(),
+            exercises: this.exercises,
+            completionHistory: this.completionHistory || [],
+            reviews: this.reviews
+        };
+    }
+}
+</script>
+

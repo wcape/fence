@@ -1,0 +1,4 @@
+<!-- This is a placeholder for the logo image -->
+<!-- Replace this with your actual logo file -->
+<!-- For now, this will prevent broken image errors -->
+

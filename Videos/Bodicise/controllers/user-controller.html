@@ -1,0 +1,435 @@
+<!-- User Controller - Handles user profile and account management -->
+<script>
+class UserController {
+    static currentUser = null;
+    static userProfile = null;
+    static userSettings = null;
+
+    // Initialize user controller
+    static async init() {
+        await this.loadUserProfile();
+        await this.loadUserSettings();
+    }
+
+    // Load user profile
+    static async loadUserProfile() {
+        try {
+            const response = await ApiClient.get('/user/profile');
+            if (response.success) {
+                this.userProfile = response.profile;
+                this.currentUser = response.profile;
+                return response.profile;
+            }
+        } catch (error) {
+            console.error('Failed to load user profile:', error);
+        }
+    }
+
+    // Update user profile
+    static async updateProfile(profileData) {
+        try {
+            const response = await ApiClient.put('/user/profile', profileData);
+            
+            if (response.success) {
+                this.userProfile = response.profile;
+                this.currentUser = response.profile;
+                return response.profile;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to update profile:', error);
+            throw error;
+        }
+    }
+
+    // Upload profile picture
+    static async uploadProfilePicture(file) {
+        try {
+            const formData = new FormData();
+            formData.append('profilePicture', file);
+
+            const response = await ApiClient.post('/user/profile-picture', formData, {
+                'Content-Type': 'multipart/form-data'
+            });
+            
+            if (response.success) {
+                this.userProfile.avatar = response.avatarUrl;
+                this.currentUser.avatar = response.avatarUrl;
+                return response.avatarUrl;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to upload profile picture:', error);
+            throw error;
+        }
+    }
+
+    // Update user settings
+    static async updateSettings(settingsData) {
+        try {
+            const response = await ApiClient.put('/user/settings', settingsData);
+            
+            if (response.success) {
+                this.userSettings = response.settings;
+                return response.settings;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to update settings:', error);
+            throw error;
+        }
+    }
+
+    // Load user settings
+    static async loadUserSettings() {
+        try {
+            const response = await ApiClient.get('/user/settings');
+            if (response.success) {
+                this.userSettings = response.settings;
+                return response.settings;
+            }
+        } catch (error) {
+            console.error('Failed to load user settings:', error);
+        }
+    }
+
+    // Change password
+    static async changePassword(passwordData) {
+        try {
+            const response = await ApiClient.put('/user/change-password', passwordData);
+            
+            if (response.success) {
+                return true;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to change password:', error);
+            throw error;
+        }
+    }
+
+    // Update fitness goals
+    static async updateFitnessGoals(goals) {
+        try {
+            const response = await ApiClient.put('/user/fitness-goals', { goals });
+            
+            if (response.success) {
+                this.userProfile.fitnessGoals = goals;
+                return goals;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to update fitness goals:', error);
+            throw error;
+        }
+    }
+
+    // Update body measurements
+    static async updateBodyMeasurements(measurements) {
+        try {
+            const response = await ApiClient.put('/user/body-measurements', { measurements });
+            
+            if (response.success) {
+                this.userProfile.bodyMeasurements = measurements;
+                return measurements;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to update body measurements:', error);
+            throw error;
+        }
+    }
+
+    // Get user progress
+    static async getUserProgress(period = 'month') {
+        try {
+            const response = await ApiClient.get(`/user/progress?period=${period}`);
+            
+            if (response.success) {
+                return response.progress;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to get user progress:', error);
+            throw error;
+        }
+    }
+
+    // Get user achievements
+    static async getUserAchievements() {
+        try {
+            const response = await ApiClient.get('/user/achievements');
+            
+            if (response.success) {
+                return response.achievements;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to get user achievements:', error);
+            throw error;
+        }
+    }
+
+    // Update notification preferences
+    static async updateNotificationPreferences(preferences) {
+        try {
+            const response = await ApiClient.put('/user/notifications', { preferences });
+            
+            if (response.success) {
+                this.userSettings.notifications = preferences;
+                return preferences;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to update notification preferences:', error);
+            throw error;
+        }
+    }
+
+    // Get user subscription
+    static async getUserSubscription() {
+        try {
+            const response = await ApiClient.get('/user/subscription');
+            
+            if (response.success) {
+                return response.subscription;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to get user subscription:', error);
+            throw error;
+        }
+    }
+
+    // Cancel subscription
+    static async cancelSubscription() {
+        try {
+            const response = await ApiClient.post('/user/subscription/cancel');
+            
+            if (response.success) {
+                return true;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to cancel subscription:', error);
+            throw error;
+        }
+    }
+
+    // Update subscription
+    static async updateSubscription(plan) {
+        try {
+            const response = await ApiClient.put('/user/subscription', { plan });
+            
+            if (response.success) {
+                return response.subscription;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to update subscription:', error);
+            throw error;
+        }
+    }
+
+    // Get user activity feed
+    static async getActivityFeed(page = 1, limit = 20) {
+        try {
+            const response = await ApiClient.get(`/user/activity-feed?page=${page}&limit=${limit}`);
+            
+            if (response.success) {
+                return response.activities;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to get activity feed:', error);
+            throw error;
+        }
+    }
+
+    // Follow user
+    static async followUser(userId) {
+        try {
+            const response = await ApiClient.post('/user/follow', { userId });
+            
+            if (response.success) {
+                return true;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to follow user:', error);
+            throw error;
+        }
+    }
+
+    // Unfollow user
+    static async unfollowUser(userId) {
+        try {
+            const response = await ApiClient.post('/user/unfollow', { userId });
+            
+            if (response.success) {
+                return true;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to unfollow user:', error);
+            throw error;
+        }
+    }
+
+    // Get user followers
+    static async getUserFollowers(userId = null) {
+        try {
+            const url = userId ? `/user/${userId}/followers` : '/user/followers';
+            const response = await ApiClient.get(url);
+            
+            if (response.success) {
+                return response.followers;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to get user followers:', error);
+            throw error;
+        }
+    }
+
+    // Get user following
+    static async getUserFollowing(userId = null) {
+        try {
+            const url = userId ? `/user/${userId}/following` : '/user/following';
+            const response = await ApiClient.get(url);
+            
+            if (response.success) {
+                return response.following;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to get user following:', error);
+            throw error;
+        }
+    }
+
+    // Search users
+    static async searchUsers(query) {
+        try {
+            const response = await ApiClient.get(`/user/search?q=${encodeURIComponent(query)}`);
+            
+            if (response.success) {
+                return response.users;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to search users:', error);
+            throw error;
+        }
+    }
+
+    // Get user profile by ID
+    static async getUserProfile(userId) {
+        try {
+            const response = await ApiClient.get(`/user/${userId}/profile`);
+            
+            if (response.success) {
+                return response.profile;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to get user profile:', error);
+            throw error;
+        }
+    }
+
+    // Delete user account
+    static async deleteAccount() {
+        try {
+            const response = await ApiClient.delete('/user/account');
+            
+            if (response.success) {
+                // Clear local data
+                this.currentUser = null;
+                this.userProfile = null;
+                this.userSettings = null;
+                
+                // Clear stored data
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('user');
+                
+                return true;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to delete account:', error);
+            throw error;
+        }
+    }
+
+    // Export user data
+    static async exportUserData() {
+        try {
+            const response = await ApiClient.get('/user/export');
+            
+            if (response.success) {
+                return response.downloadUrl;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to export user data:', error);
+            throw error;
+        }
+    }
+
+    // Get user statistics
+    static async getUserStats() {
+        try {
+            const response = await ApiClient.get('/user/stats');
+            
+            if (response.success) {
+                return response.stats;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to get user stats:', error);
+            throw error;
+        }
+    }
+
+    // Update user preferences
+    static async updateUserPreferences(preferences) {
+        try {
+            const response = await ApiClient.put('/user/preferences', preferences);
+            
+            if (response.success) {
+                this.userSettings.preferences = preferences;
+                return preferences;
+            } else {
+                throw new Error(response.message);
+            }
+        } catch (error) {
+            console.error('Failed to update user preferences:', error);
+            throw error;
+        }
+    }
+}
+</script>
+
