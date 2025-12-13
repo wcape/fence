@@ -332,7 +332,7 @@
             </div>
 
             <!-- Assessment Form -->
-            <form id="ebookAssessmentForm" onsubmit="handleFinalSubmit(event)">
+            <form id="ebookAssessmentForm" onsubmit="handleFinalSubmit(event)" novalidate>
                 <!-- Step 1: Basic Information -->
                 <div class="step-content active" id="step1">
                     <div class="step-header">
@@ -596,13 +596,26 @@
         }
 
         function showStep(step) {
+            // Remove required attribute from all hidden fields to prevent validation errors
+            document.querySelectorAll('.step-content:not(.active) [required]').forEach(field => {
+                field.removeAttribute('required');
+            });
+            
             // Hide all steps
             document.querySelectorAll('.step-content').forEach(content => {
                 content.classList.remove('active');
             });
             
             // Show current step
-            document.getElementById(`step${step}`).classList.add('active');
+            const currentStepElement = document.getElementById(`step${step}`);
+            currentStepElement.classList.add('active');
+            
+            // Restore required attributes for visible fields in current step
+            currentStepElement.querySelectorAll('input[required], select[required], textarea[required]').forEach(field => {
+                if (!field.hasAttribute('required')) {
+                    field.setAttribute('required', 'required');
+                }
+            });
             
             // Update step indicators
             document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
@@ -716,6 +729,43 @@
         // Final submission
         async function handleFinalSubmit(event) {
             event.preventDefault();
+            
+            // Remove required attribute from ALL hidden fields (including any age/weight fields)
+            document.querySelectorAll('input[required], select[required], textarea[required]').forEach(field => {
+                const isVisible = field.offsetParent !== null && 
+                                 window.getComputedStyle(field).display !== 'none' &&
+                                 window.getComputedStyle(field).visibility !== 'hidden';
+                
+                if (!isVisible) {
+                    field.removeAttribute('required');
+                }
+            });
+            
+            // Validate only visible required fields in step 4
+            const currentStepElement = document.getElementById('step4');
+            const requiredFields = currentStepElement.querySelectorAll('[required]');
+            let isValid = true;
+
+            requiredFields.forEach(field => {
+                if (field.type === 'checkbox') {
+                    if (!field.checked) {
+                        isValid = false;
+                        field.classList.add('error');
+                    } else {
+                        field.classList.remove('error');
+                    }
+                } else if (!field.value || !field.value.trim()) {
+                    isValid = false;
+                    field.classList.add('error');
+                } else {
+                    field.classList.remove('error');
+                }
+            });
+
+            if (!isValid) {
+                App.showError('Please complete all required fields');
+                return;
+            }
             
             // Save final step data
             saveStepData();
