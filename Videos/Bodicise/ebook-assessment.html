@@ -674,11 +674,26 @@
             
             inputs.forEach(input => {
                 if (input.type === 'checkbox') {
+                    // For checkboxes, rebuild the array from scratch for this step
+                    if (input.name === 'additionalGoals') {
+                        // Get all checkboxes with this name in the current step
+                        const checkboxes = currentStepElement.querySelectorAll(`input[name="${input.name}"]`);
+                        formData[input.name] = [];
+                        checkboxes.forEach(cb => {
+                            if (cb.checked) {
+                                formData[input.name].push(cb.value);
+                            }
+                        });
+                    } else {
+                        // For other checkboxes, just store the checked state
                     if (input.checked) {
                         if (!formData[input.name]) {
                             formData[input.name] = [];
                         }
+                            if (!formData[input.name].includes(input.value)) {
                         formData[input.name].push(input.value);
+                            }
+                        }
                     }
                 } else if (input.type === 'radio') {
                     if (input.checked) {
@@ -776,19 +791,54 @@
             submitButton.disabled = true;
 
             try {
-                // Prepare data for webhook
+                // Collect all form data from all steps one final time
+                const form = document.getElementById('ebookAssessmentForm');
+                const allInputs = form.querySelectorAll('input, select, textarea');
+                const collectedData = {};
+                
+                // Collect all field values
+                allInputs.forEach(input => {
+                    if (input.type === 'checkbox') {
+                        if (input.checked) {
+                            if (!collectedData[input.name]) {
+                                collectedData[input.name] = [];
+                            }
+                            if (!collectedData[input.name].includes(input.value)) {
+                                collectedData[input.name].push(input.value);
+                            }
+                        }
+                    } else if (input.type === 'radio') {
+                        if (input.checked) {
+                            collectedData[input.name] = input.value;
+                        }
+                    } else if (input.name) {
+                        collectedData[input.name] = input.value || '';
+                    }
+                });
+                
+                // Prepare comprehensive data for webhook with all collected fields
                 const webhookData = {
-                    firstName: formData.firstName,
-                    lastName: formData.lastName,
-                    email: formData.email,
-                    phone: formData.phone || '',
-                    primaryGoal: formData.primaryGoal,
-                    additionalGoals: formData.additionalGoals || [],
-                    fitnessLevel: formData.fitnessLevel,
-                    workoutFrequency: formData.workoutFrequency,
-                    workoutDuration: formData.workoutDuration,
-                    equipment: formData.equipment,
-                    injuries: formData.injuries || '',
+                    // Step 1: Basic Information
+                    firstName: collectedData.firstName || '',
+                    lastName: collectedData.lastName || '',
+                    email: collectedData.email || '',
+                    phone: collectedData.phone || '',
+                    
+                    // Step 2: Fitness Goals
+                    primaryGoal: collectedData.primaryGoal || '',
+                    additionalGoals: Array.isArray(collectedData.additionalGoals) ? collectedData.additionalGoals : [],
+                    
+                    // Step 3: Fitness Experience
+                    fitnessLevel: collectedData.fitnessLevel || '',
+                    workoutFrequency: collectedData.workoutFrequency || '',
+                    workoutDuration: collectedData.workoutDuration || '',
+                    equipment: collectedData.equipment || '',
+                    injuries: collectedData.injuries || '',
+                    
+                    // Step 4: Terms agreement
+                    termsAccepted: collectedData.terms === 'on' || collectedData.terms === true,
+                    
+                    // Metadata
                     timestamp: new Date().toISOString(),
                     source: 'ebook_assessment',
                     page: window.location.href
@@ -796,6 +846,10 @@
 
                 // Call n8n webhook
                 const webhookUrl = 'https://n8n.srv901848.hstgr.cloud/webhook-test/bodicisePersonalEbook';
+                
+                // Log the data being sent for debugging
+                console.log('Sending data to webhook:', webhookData);
+                console.log('Webhook URL:', webhookUrl);
                 
                 const response = await fetch(webhookUrl, {
                     method: 'POST',
@@ -805,8 +859,31 @@
                     body: JSON.stringify(webhookData)
                 });
 
+                console.log('Response status:', response.status);
+                console.log('Response ok:', response.ok);
+                console.log('Response headers:', response.headers);
+
+                // Check if response is ok
                 if (response.ok) {
-                    const result = await response.json();
+                    let result = {};
+                    const contentType = response.headers.get('content-type');
+                    
+                    // Try to parse JSON if content-type indicates JSON
+                    if (contentType && contentType.includes('application/json')) {
+                        try {
+                            result = await response.json();
+                            console.log('Response data:', result);
+                        } catch (jsonError) {
+                            console.warn('Failed to parse JSON response:', jsonError);
+                            // If JSON parsing fails, try to get text
+                            const text = await response.text();
+                            console.log('Response text:', text);
+                        }
+                    } else {
+                        // If not JSON, get text response
+                        const text = await response.text();
+                        console.log('Response text:', text);
+                    }
                     
                     // Show success message
                     App.showSuccess('Success! Your free ebook is being prepared. Check your email!');
@@ -827,10 +904,20 @@
                         }, 3000);
                     }
                 } else {
-                    throw new Error('Failed to process request');
+                    // Get error details
+                    const errorText = await response.text().catch(() => 'No error details');
+                    console.error('Webhook error response:', response.status, errorText);
+                    throw new Error(`Webhook returned status ${response.status}: ${errorText}`);
                 }
             } catch (error) {
                 console.error('Ebook submission error:', error);
+                console.error('Error details:', {
+                    message: error.message,
+                    stack: error.stack,
+                    name: error.name
+                });
+                
+                // Show user-friendly error message
                 App.showError('Sorry, there was an error processing your request. Please try again.');
                 submitButton.innerHTML = originalText;
                 submitButton.disabled = false;
