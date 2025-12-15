@@ -848,20 +848,48 @@
                 const webhookUrl = 'https://n8n.srv901848.hstgr.cloud/webhook-test/bodicisePersonalEbook';
                 
                 // Log the data being sent for debugging
-                console.log('Sending data to webhook:', webhookData);
+                console.log('=== WEBHOOK REQUEST DEBUG ===');
                 console.log('Webhook URL:', webhookUrl);
+                console.log('Data being sent:', webhookData);
+                console.log('Data as JSON string:', JSON.stringify(webhookData));
+                console.log('Timestamp:', new Date().toISOString());
                 
-                const response = await fetch(webhookUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(webhookData)
-                });
-
-                console.log('Response status:', response.status);
-                console.log('Response ok:', response.ok);
-                console.log('Response headers:', response.headers);
+                // Verify webhook URL is accessible (pre-flight check)
+                console.log('Initiating webhook request...');
+                
+                // Create AbortController for timeout handling
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+                
+                // Record start time
+                const requestStartTime = Date.now();
+                
+                try {
+                    console.log('Sending POST request to:', webhookUrl);
+                    
+                    const response = await fetch(webhookUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                        },
+                        body: JSON.stringify(webhookData),
+                        signal: controller.signal,
+                        mode: 'cors', // Explicitly set CORS mode
+                        credentials: 'omit', // Don't send credentials
+                        redirect: 'follow' // Follow redirects
+                    });
+                    
+                    const requestDuration = Date.now() - requestStartTime;
+                    console.log(`Request completed in ${requestDuration}ms`);
+                    
+                    clearTimeout(timeoutId);
+                    
+                    console.log('=== WEBHOOK RESPONSE DEBUG ===');
+                    console.log('Response status:', response.status);
+                    console.log('Response status text:', response.statusText);
+                    console.log('Response ok:', response.ok);
+                    console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
                 // Check if response is ok
                 if (response.ok) {
@@ -906,16 +934,34 @@
                 } else {
                     // Get error details
                     const errorText = await response.text().catch(() => 'No error details');
-                    console.error('Webhook error response:', response.status, errorText);
+                    console.error('=== WEBHOOK ERROR ===');
+                    console.error('Status:', response.status);
+                    console.error('Status text:', response.statusText);
+                    console.error('Error body:', errorText);
                     throw new Error(`Webhook returned status ${response.status}: ${errorText}`);
                 }
+                } catch (fetchError) {
+                    clearTimeout(timeoutId);
+                    
+                    if (fetchError.name === 'AbortError') {
+                        console.error('=== WEBHOOK TIMEOUT ===');
+                        console.error('Request timed out after 30 seconds');
+                        throw new Error('Request timed out. The webhook may be taking too long to respond.');
+                    } else if (fetchError.name === 'TypeError' && fetchError.message.includes('fetch')) {
+                        console.error('=== NETWORK ERROR ===');
+                        console.error('Failed to reach webhook. Possible CORS or network issue.');
+                        console.error('Error:', fetchError);
+                        throw new Error('Network error: Unable to reach the webhook. Please check your connection.');
+                    } else {
+                        throw fetchError; // Re-throw other errors
+                    }
+                }
             } catch (error) {
-                console.error('Ebook submission error:', error);
-                console.error('Error details:', {
-                    message: error.message,
-                    stack: error.stack,
-                    name: error.name
-                });
+                console.error('=== EBOOK SUBMISSION ERROR ===');
+                console.error('Error type:', error.name);
+                console.error('Error message:', error.message);
+                console.error('Error stack:', error.stack);
+                console.error('Full error object:', error);
                 
                 // Show user-friendly error message
                 App.showError('Sorry, there was an error processing your request. Please try again.');
